@@ -22,17 +22,21 @@ from pathlib import Path
 import pandas as pd
 
 try:
-    import gspread
-    from google.oauth2.service_account import Credentials
-    GSPREAD_AVAILABLE = True
-except ImportError:
-    GSPREAD_AVAILABLE = False
-
-try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
+
+
+def _import_gspread():
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+        return gspread, Credentials
+    except (ImportError, Exception) as e:
+        print(f"ERROR: Could not import gspread/google-auth: {e}")
+        print("  Run: pip install gspread google-auth")
+        raise SystemExit(1)
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -58,6 +62,7 @@ SIZE_WEIGHT = {
 
 
 def get_client(credentials_path: str):
+    gspread, Credentials = _import_gspread()
     creds = Credentials.from_service_account_file(credentials_path, scopes=SCOPES)
     return gspread.authorize(creds)
 
@@ -286,8 +291,15 @@ def main():
 
     if args.dry_run:
         print("DRY RUN: Loading from local CSVs")
-        accounts_df = pd.read_csv("data/processed/accounts_scored.csv", dtype=str) \
-            if Path("data/processed/accounts_scored.csv").exists() else pd.DataFrame()
+        # Try the standard output file first, then the sample file
+        for accounts_path in ["data/processed/accounts_scored.csv",
+                              "data/processed/sample_accounts_scored.csv"]:
+            if Path(accounts_path).exists():
+                accounts_df = pd.read_csv(accounts_path, dtype=str)
+                print(f"  Loaded accounts from: {accounts_path}")
+                break
+        else:
+            accounts_df = pd.DataFrame()
         contacts_df = pd.read_csv("data/processed/contacts_clean.csv", dtype=str) \
             if Path("data/processed/contacts_clean.csv").exists() else pd.DataFrame()
         log_df = pd.DataFrame()
@@ -295,9 +307,6 @@ def main():
         sheets_id = os.environ.get("GOOGLE_SHEETS_ID", "")
         if not sheets_id:
             print("ERROR: GOOGLE_SHEETS_ID not set in .env")
-            raise SystemExit(1)
-        if not GSPREAD_AVAILABLE:
-            print("ERROR: gspread not installed. Run: pip install gspread google-auth")
             raise SystemExit(1)
         if not Path(args.credentials).exists():
             print(f"ERROR: Credentials file not found: {args.credentials}")

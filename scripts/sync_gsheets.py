@@ -24,13 +24,6 @@ from pathlib import Path
 import pandas as pd
 
 try:
-    import gspread
-    from google.oauth2.service_account import Credentials
-    GSPREAD_AVAILABLE = True
-except ImportError:
-    GSPREAD_AVAILABLE = False
-
-try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
@@ -52,12 +45,25 @@ SHEET_KEY_COLUMNS = {
 SPREADSHEET_NAME = "South India Manufacturing Safety DB"
 
 
+def _import_gspread():
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+        return gspread, Credentials
+    except (ImportError, Exception) as e:
+        print(f"ERROR: Could not import gspread/google-auth: {e}")
+        print("  Run: pip install gspread google-auth")
+        raise SystemExit(1)
+
+
 def get_client(credentials_path: str) -> "gspread.Client":
+    gspread, Credentials = _import_gspread()
     creds = Credentials.from_service_account_file(credentials_path, scopes=SCOPES)
     return gspread.authorize(creds)
 
 
-def get_or_create_sheet(spreadsheet: "gspread.Spreadsheet", sheet_name: str) -> "gspread.Worksheet":
+def get_or_create_sheet(spreadsheet, sheet_name: str):
+    gspread, _ = _import_gspread()
     try:
         return spreadsheet.worksheet(sheet_name)
     except gspread.WorksheetNotFound:
@@ -148,13 +154,19 @@ def main():
         print(f"ERROR: File not found: {input_path}")
         raise SystemExit(1)
 
+    if args.dry_run:
+        new_df = pd.read_csv(input_path, dtype=str)
+        print(f"Loaded {len(new_df)} rows from {input_path}")
+        key_col = SHEET_KEY_COLUMNS[args.sheet]
+        print(f"\nDRY RUN — would sync {len(new_df)} rows to sheet '{args.sheet}'")
+        print(f"  Columns: {list(new_df.columns)}")
+        if len(new_df) > 0:
+            print(f"  Sample row: {new_df.iloc[0][['company_name', 'segment', 'hq_state', 'status']].to_dict() if 'company_name' in new_df.columns else new_df.iloc[0].to_dict()}")
+        return
+
     sheets_id = os.environ.get("GOOGLE_SHEETS_ID", "")
     if not sheets_id:
         print("ERROR: GOOGLE_SHEETS_ID not set. Add it to your .env file.")
-        raise SystemExit(1)
-
-    if not GSPREAD_AVAILABLE:
-        print("ERROR: gspread not installed. Run: pip install gspread google-auth")
         raise SystemExit(1)
 
     credentials_path = args.credentials
@@ -168,12 +180,6 @@ def main():
 
     key_col = SHEET_KEY_COLUMNS[args.sheet]
     print(f"Target sheet: {args.sheet} | Key column: {key_col}")
-
-    if args.dry_run:
-        print(f"\nDRY RUN — would sync {len(new_df)} rows to sheet '{args.sheet}'")
-        print(f"  Columns: {list(new_df.columns)}")
-        print(f"  First row sample: {new_df.iloc[0].to_dict() if len(new_df) > 0 else 'empty'}")
-        return
 
     print(f"Connecting to Google Sheets...")
     client = get_client(credentials_path)
