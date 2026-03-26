@@ -44,7 +44,10 @@ COLUMN_ALIASES = {
 # ── Segment keyword mapping ───────────────────────────────────────────────────
 SEGMENT_KEYWORDS = {
     "Automotive": ["automotive", "auto components", "auto parts", "vehicle", "tyre", "tire",
-                   "stamping", "forging", "casting", "transmission", "axle", "brake"],
+                   "stamping", "forging", "casting", "transmission", "axle", "brake",
+                   "motor company", "leyland", "fastener", "clayton", "rane", "wheels india",
+                   "renault", "nissan", "daimler", "bharatbenz", "bosch", "2-wheeler",
+                   "car assembly", "truck", "commercial vehicle", "two-wheeler"],
     "Pharma": ["pharma", "pharmaceutical", "drug", "medicine", "api", "formulation",
                "life sciences", "biotech", "generics"],
     "FMCG/F&B": ["fmcg", "food", "beverage", "dairy", "snack", "consumer goods",
@@ -105,26 +108,25 @@ def infer_segment(text: str) -> str:
 
 
 def normalize_employee_band(val) -> str:
+    import re
     if pd.isna(val) or val == "":
         return ""
-    text = str(val).lower().replace(",", "").replace("+", "")
-    # Extract first number found
-    import re
+    raw = str(val).strip()
+    # Pass through already-valid labels (e.g. "5000+", "1000-5000", "500-1000", "<500")
+    if raw in ("5000+", "1000-5000", "500-1000", "<500"):
+        return raw
+    # Check for explicit "5000+" pattern before stripping "+"
+    if "5000+" in raw or "5001" in raw or "10000" in raw:
+        return "5000+"
+    text = raw.lower().replace(",", "").replace("+", "")
     nums = re.findall(r"\d+", text)
     if not nums:
-        # Try label matching
-        if "5001" in text or "10000" in text or "10,001" in text:
-            return "5000+"
-        if "1001" in text or "5000" in text:
-            return "1000-5000"
-        if "501" in text or "1000" in text:
-            return "500-1000"
-        return str(val)
+        return raw
     n = int(nums[0])
     for lo, hi, label in EMPLOYEE_BAND_MAP:
         if lo <= n <= hi:
             return label
-    return str(val)
+    return raw
 
 
 def fuzzy_match_score(a: str, b: str) -> float:
@@ -197,16 +199,16 @@ def main():
     df["company_name"] = df["company_name"].str.title()
 
     # Infer hq_state if missing
-    location_source = df.get("plant_locations", df.get("hq_state", pd.Series([""] * len(df))))
-    df["hq_state"] = df.get("hq_state", "").where(
-        df.get("hq_state", pd.Series([""] * len(df))).notna() &
-        (df.get("hq_state", pd.Series([""] * len(df))) != ""),
-        location_source.apply(infer_state)
-    )
+    if "hq_state" not in df.columns:
+        df["hq_state"] = ""
+    location_source = df["plant_locations"] if "plant_locations" in df.columns else pd.Series([""] * len(df))
+    missing_state = df["hq_state"].fillna("") == ""
+    df.loc[missing_state, "hq_state"] = location_source[missing_state].apply(infer_state)
 
     # Infer segment if missing
-    text_for_segment = df.get("segment", pd.Series([""] * len(df))).fillna("") + " " + \
-                       df.get("company_name", pd.Series([""] * len(df))).fillna("")
+    text_for_segment = (df.get("segment", pd.Series([""] * len(df))).fillna("") + " " +
+                        df.get("company_name", pd.Series([""] * len(df))).fillna("") + " " +
+                        df.get("notes", pd.Series([""] * len(df))).fillna(""))
     mask_no_segment = df.get("segment", pd.Series([""] * len(df))).fillna("") == ""
     if "segment" not in df.columns:
         df["segment"] = text_for_segment.apply(infer_segment)
