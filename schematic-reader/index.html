@@ -1,0 +1,984 @@
+<title>Schematic Lens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#eef1ec; --surface:#ffffff; --surface-2:#f6f8f5; --ink:#16222c; --muted:#56636e; --line:#d3d9d2;
+  --accent:#f2b705; --accent-ink:#16222c; --wire:#1b5cb3; --wire-soft:#e3ecf8;
+  --crit:#c42b2b; --major:#c9620a; --minor:#9a7a00; --ok:#2c7a4b; --info:#56636e;
+  --crit-bg:#fbe9e7; --major-bg:#fdf0e3; --minor-bg:#fbf5dc; --ok-bg:#e6f3eb; --info-bg:#eceff1;
+  --shadow:0 1px 2px rgba(22,34,44,.06),0 4px 16px rgba(22,34,44,.06);
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0e1419; --surface:#161f27; --surface-2:#1b262f; --ink:#e4eae6; --muted:#98a6b0; --line:#2b3843;
+    --accent:#f2b705; --accent-ink:#11181e; --wire:#78adff; --wire-soft:#1d2d44;
+    --crit:#ff7a72; --major:#ffa25a; --minor:#e3c34d; --ok:#6fcf97; --info:#98a6b0;
+    --crit-bg:#3a1b1b; --major-bg:#3a2715; --minor-bg:#332e14; --ok-bg:#16301f; --info-bg:#222c33;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0e1419; --surface:#161f27; --surface-2:#1b262f; --ink:#e4eae6; --muted:#98a6b0; --line:#2b3843;
+  --accent:#f2b705; --accent-ink:#11181e; --wire:#78adff; --wire-soft:#1d2d44;
+  --crit:#ff7a72; --major:#ffa25a; --minor:#e3c34d; --ok:#6fcf97; --info:#98a6b0;
+  --crit-bg:#3a1b1b; --major-bg:#3a2715; --minor-bg:#332e14; --ok-bg:#16301f; --info-bg:#222c33;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--f-body);padding-inline:16px;padding-block:0 48px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--wire);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto}
+.mono{font-family:var(--f-mono);font-size:.9em}
+
+/* Title block header */
+.hazard{height:6px;background:repeating-linear-gradient(-45deg,var(--accent) 0 10px,#16222c 10px 20px);margin-inline:-16px}
+header.tb{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:end;padding-block:18px 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tb h1{font:700 34px/1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0}
+.tb h1 span{color:var(--muted);font-weight:600}
+.tb .std{font:500 12px/1.4 var(--f-mono);color:var(--muted);text-align:right}
+.tb p{grid-column:1/-1;margin:2px 0 0;color:var(--muted);max-width:70ch}
+@media (max-width:560px){header.tb{grid-template-columns:1fr}.tb .std{text-align:left}}
+
+.layout{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:980px){.layout{grid-template-columns:350px minmax(0,1fr);align-items:start}.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:var(--shadow)}
+.side{display:flex;flex-direction:column;gap:16px}
+.step{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
+.step b{font:700 13px/1 var(--f-mono);background:var(--accent);color:var(--accent-ink);padding:4px 6px;border-radius:3px}
+.step h2{font:700 20px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0}
+.hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:500;min-height:40px}
+.btn:hover{border-color:var(--wire)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:600}
+.btn.go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font:700 18px/1 var(--f-display);text-transform:uppercase;letter-spacing:.04em;width:100%;min-height:48px}
+.btn.small{padding:5px 10px;min-height:32px;font-size:13px}
+.btn.danger{color:var(--crit)}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:stretch;transition:border-color .15s}
+.drop.over{border-color:var(--wire);background:var(--wire-soft)}
+.drop .row .btn{flex:1}
+.sheets{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.sheet{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
+.sheet img{width:56px;height:40px;object-fit:cover;border-radius:4px;background:#fff;border:1px solid var(--line)}
+.sheet .nm{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet .dm{font:500 11px var(--f-mono);color:var(--muted)}
+.sheet .acts{display:flex;gap:4px}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;width:32px;height:32px;cursor:pointer;display:grid;place-items:center}
+.icon-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field>label,.field>.lbl{font:600 11px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:8px 10px;resize:vertical}
+select{border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:6px 8px}
+
+.progress{margin-top:12px;font-size:13px;border-left:3px solid var(--accent);padding:6px 10px;background:var(--surface-2);border-radius:0 6px 6px 0}
+.progress .t{font:500 12px var(--f-mono);color:var(--muted)}
+.banner{border-radius:8px;padding:10px 12px;font-size:13.5px;border:1px solid var(--line)}
+.banner.warn{background:var(--major-bg);border-color:transparent}
+.banner.err{background:var(--crit-bg);border-color:transparent}
+.banner.info{background:var(--wire-soft);border-color:transparent}
+
+/* Report */
+.report{display:flex;flex-direction:column;gap:16px;min-width:0}
+.rhead{display:grid;gap:10px}
+.ex-tag{display:inline-block;font:700 12px/1 var(--f-mono);letter-spacing:.06em;background:var(--accent);color:var(--accent-ink);padding:5px 8px;border-radius:3px;width:max-content}
+.rhead h2{font:700 28px/1.1 var(--f-display);margin:0;text-wrap:balance}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.meta div{padding:8px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.meta dt{font:600 10.5px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+.meta dd{margin:0;font-weight:500;font-size:14px}
+.summary{max-width:75ch;margin:0}
+.counts{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.crit{background:var(--crit-bg);color:var(--crit)}
+.pill.major{background:var(--major-bg);color:var(--major)}
+.pill.minor{background:var(--minor-bg);color:var(--minor)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.n{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+.conf{font:500 11px var(--f-mono);padding:2px 6px;border-radius:4px;white-space:nowrap}
+.conf.high{background:var(--ok-bg);color:var(--ok)}
+.conf.medium{background:var(--minor-bg);color:var(--minor)}
+.conf.low{background:var(--crit-bg);color:var(--crit)}
+.sbadge{font:700 10px/1 var(--f-mono);background:var(--accent);color:var(--accent-ink);padding:2px 4px;border-radius:3px;margin-left:6px;vertical-align:2px}
+
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.tabs button{border:0;background:none;padding:10px 14px;cursor:pointer;font:600 16px/1 var(--f-display);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .c{font:500 11px var(--f-mono);margin-left:4px;color:var(--muted)}
+.tabpanel{padding-top:14px}
+
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font:600 11px/1.2 var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.tag{font-family:var(--f-mono);font-weight:500;white-space:nowrap;color:var(--wire)}
+td .sub{color:var(--muted);font-size:12.5px}
+.filter{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.filter input[type=search]{flex:1;min-width:160px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:7px 10px}
+.filter label{font-size:13px;display:flex;gap:6px;align-items:center}
+
+.disclaimer{font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:8px 12px;margin-bottom:14px}
+h3.sec{font:700 18px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.04em;margin:18px 0 10px}
+h3.sec:first-child{margin-top:0}
+.sf-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.sf{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.sf h4{margin:0;font-size:15px}
+.chain{display:grid;grid-template-columns:1fr;gap:4px;font-size:13px}
+.chain div{display:grid;grid-template-columns:62px 1fr;gap:8px}
+.chain span:first-child{font:600 10.5px/1.7 var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:2px 7px;background:var(--surface-2)}
+.chip b{font-weight:600}
+.catbox{display:flex;gap:8px;align-items:center;font-size:13px}
+.catbox .big{font:700 22px/1 var(--f-display);border:2px solid var(--ink);border-radius:6px;padding:4px 8px}
+.findings{display:flex;flex-direction:column;gap:10px}
+.finding{display:grid;grid-template-columns:6px 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.finding .bar{background:var(--info)}
+.finding.critical .bar{background:var(--crit)} .finding.major .bar{background:var(--major)} .finding.minor .bar{background:var(--minor)}
+.finding .body{padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.finding h4{margin:0;font-size:14.5px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.finding p{margin:0;font-size:13.5px}
+.finding .rec{color:var(--ok)}
+.finding .ref{font:500 12px var(--f-mono);color:var(--muted)}
+
+.circuits{display:flex;flex-direction:column;gap:12px}
+.circuit{border-left:3px solid var(--wire);padding:2px 0 2px 12px}
+.circuit h4{margin:0 0 4px;font-size:15px}
+.circuit ol{margin:6px 0 0;padding-left:20px;font-size:13.5px}
+.circuit p{margin:0;font-size:13.5px}
+ul.plain{margin:0;padding-left:18px;font-size:13.5px}
+.checklist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.checklist label{display:flex;gap:8px;align-items:flex-start;font-size:13.5px}
+
+/* Chat */
+.chat{display:flex;flex-direction:column;gap:10px}
+.msgs{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;padding:4px}
+.msg{max-width:88%;padding:9px 12px;border-radius:10px;font-size:14px}
+.msg.u{align-self:flex-end;background:var(--ink);color:var(--paper);border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:var(--surface-2);border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg.a p{margin:0 0 6px}.msg.a p:last-child{margin:0}
+.msg.a ul,.msg.a ol{margin:4px 0 6px;padding-left:18px}
+.msg code{font-family:var(--f-mono);font-size:.88em;background:var(--wire-soft);padding:0 3px;border-radius:3px}
+.msg.u code{background:transparent}
+.suggest{display:flex;flex-wrap:wrap;gap:6px}
+.suggest button{font-size:12.5px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 10px;cursor:pointer}
+.composer{display:flex;gap:8px;align-items:flex-end}
+.composer textarea{min-height:44px;flex:1}
+.opts{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px;color:var(--muted)}
+.opts label{display:flex;gap:6px;align-items:center}
+
+/* History */
+.hist{display:flex;flex-direction:column;gap:8px}
+.hitem{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--surface-2)}
+.hitem img,.hitem .ph{width:48px;height:36px;object-fit:cover;border-radius:4px;background:var(--line)}
+.hitem .t{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hitem .d{font:500 11px var(--f-mono);color:var(--muted)}
+.hitem .acts{display:flex;gap:4px}
+.exports{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.empty{color:var(--muted);font-size:13.5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="hazard" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="tb">
+    <h1>Schematic Lens <span>/ circuit reader</span></h1>
+    <div class="std">IEC 60617 · IEC 81346 · NEMA/JIC<br>ISO 13849-1 · IEC 60204-1</div>
+    <p>Upload control, safety or single-line drawings. Claude lists every device against its symbol, traces the connections, explains how the circuit works and reviews the safety functions.</p>
+  </header>
+
+  <div id="capBanner" class="banner warn" hidden style="margin-bottom:16px"></div>
+
+  <div class="layout">
+    <aside class="side">
+      <section class="panel" aria-labelledby="s1">
+        <div class="step"><b>01</b><h2 id="s1">Drawings</h2></div>
+        <div class="drop" id="drop">
+          <div class="row">
+            <button class="btn primary" id="pickBtn" type="button">Add files</button>
+            <button class="btn" id="camBtn" type="button">Take photo</button>
+          </div>
+          <input type="file" id="fileIn" accept="image/*,application/pdf,.pdf" multiple hidden>
+          <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
+          <div class="hint" style="margin:0">JPG, PNG or PDF (each PDF page becomes a sheet). Drop files here on desktop.</div>
+        </div>
+        <div class="sheets" id="sheets"></div>
+        <p class="hint">Photos: shoot square-on in good light and fill the frame with the sheet. Use the rotate button if a sheet is sideways. Photos forwarded through WhatsApp lose detail; upload the original from your gallery or send it as a document.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="s2">
+        <div class="step"><b>02</b><h2 id="s2">Settings</h2></div>
+        <div class="field"><span class="lbl">Drawing type</span>
+          <div class="seg" data-key="type">
+            <button type="button" data-v="auto" aria-pressed="true">Auto-detect</button>
+            <button type="button" data-v="control" aria-pressed="false">Control</button>
+            <button type="button" data-v="safety" aria-pressed="false">Safety</button>
+            <button type="button" data-v="power" aria-pressed="false">Power / SLD</button>
+            <button type="button" data-v="plc" aria-pressed="false">PLC I/O</button>
+          </div>
+        </div>
+        <div class="field"><span class="lbl">Standard</span>
+          <div class="seg" data-key="std">
+            <button type="button" data-v="auto" aria-pressed="true">Auto</button>
+            <button type="button" data-v="iec" aria-pressed="false">IEC</button>
+            <button type="button" data-v="nema" aria-pressed="false">NEMA / JIC</button>
+          </div>
+        </div>
+        <div class="field"><span class="lbl">Zoom detail</span>
+          <div class="seg" data-key="detail">
+            <button type="button" data-v="standard" aria-pressed="true">Standard · 2×2</button>
+            <button type="button" data-v="high" aria-pressed="false">Dense sheet · 3×3</button>
+          </div>
+        </div>
+        <div class="field"><span class="lbl">Depth</span>
+          <div class="seg" data-key="depth">
+            <button type="button" data-v="thorough" aria-pressed="true">Thorough</button>
+            <button type="button" data-v="fast" aria-pressed="false">Fast</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="ctx">Context (optional)</label>
+          <textarea id="ctx" placeholder="e.g. Hydraulic press, 2 guard doors, check the E-stop and light curtain circuits"></textarea>
+        </div>
+        <button class="btn go" id="goBtn" type="button">Read drawings</button>
+        <div class="row" style="margin-top:8px"><button class="btn small" id="stopBtn" type="button" hidden>Stop</button></div>
+        <div id="progress" class="progress" hidden></div>
+        <div id="err" class="banner err" hidden style="margin-top:10px"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="s3">
+        <div class="step"><b>03</b><h2 id="s3">Saved reports</h2></div>
+        <div id="hist" class="hist"><p class="empty">Loading…</p></div>
+      </section>
+    </aside>
+
+    <main class="panel report" id="report" aria-live="polite"></main>
+  </div>
+</div>
+
+<script>
+/* ---------- Knowledge given to Claude with every drawing ---------- */
+const KNOWLEDGE = `READING CONVENTIONS
+IEC drawings (IEC 60617 symbols, IEC 81346 reference designations, IEC 60204-1):
+- Device tags start with "-" and may carry function/location prefixes (=A1+CP1-K3). Letter codes, old IEC 61346 and new IEC 81346-2:2019: Q/QA = circuit breaker, contactor, motor starter; QB = disconnector / main switch; K/KF = relay, safety relay, PLC module, timer; S/SF = push button, selector, E-stop; B/BG = position / limit / interlock switch, proximity sensor, light curtain; F/FA/FC = fuse, MCB, motor protection, overload relay; M/MA = motor; T/TA/TB = transformer, power supply; G = power supply; H/PF = indicator lamp, beacon; P = meter; X/XD = terminal strip; W = cable; Y/MB = solenoid valve coil; A = assembly / module.
+- Terminal numbers: first digit = contact position, second = function. x1-x2 NC, x3-x4 NO, x5-x6 delayed NC, x7-x8 delayed NO, 95-96 overload NC, 97-98 overload NO. Coil A1/A2. Main poles 1-2, 3-4, 5-6 (L1-T1, L2-T2, L3-T3).
+- Cross references: under a coil, a contact table such as "13-14 /5.3" means sheet 5 column 3. A reference like "/12.4" beside a contact points to its coil.
+- Safety relays: S11/S12 and S21/S22 input channels, S33/S34 (or S34/S35) reset, Y1/Y2 or S33/S34 feedback (EDM) loop, 13-14/23-24/33-34 safety NO outputs, 41-42 auxiliary NC (not a safety output), A1/A2 supply. Safety PLC / light curtains: OSSD1/OSSD2, test pulse outputs T0/T1.
+- Symbols: positive (direct) opening action = arrow in a circle on an NC contact (IEC 60947-5-1 Annex K). E-stop = mushroom head with latching. Mirror contacts (IEC 60947-4-1 Annex F) and mechanically linked contacts (IEC 60947-5-1 Annex L) are marked specially. Solenoid-locking guard switch shows coil plus contacts. Light curtain = emitter/receiver pair with OSSD outputs.
+- Wire colours per IEC 60204-1: black = power, red = AC control, blue = DC control, orange = interlock circuits fed from an external source, green-yellow = PE, light blue = neutral.
+NEMA / JIC / ANSI drawings (NFPA 79, IEEE 315 / ANSI Y32.2, JIC):
+- Ladder (line) diagrams: vertical rails (L1/L2, X1/X2, +24V/0V), rung numbers on the left; numbers on the right list the rungs where that coil's contacts are used, underlined = NC contact.
+- Tags: M = starter / contactor coil, CR = control relay, MCR = master control relay, TR/TD = timer, OL = overload, PB = push button, E-STOP/ES, LS = limit switch, PS = pressure switch, FS = float/flow switch, SS = selector switch, PL/LT = pilot light, SOL = solenoid, CB = circuit breaker, FU = fuse, DISC = disconnect, XFMR/T = transformer, SR = safety relay, VFD = drive.
+- Contacts: NO = two parallel lines; NC = same with a diagonal slash; coils = circles; timed contacts with arrows (TDE/TDD, NOTC/NCTO).
+SINGLE-LINE DIAGRAMS: supply (transformer kVA, voltage, vector group), incomer (ACB/MCCB, rating, poles, trip settings), busbars, metering / CT / PT, outgoing feeders (device, In, Icu/Ics, trip setting), cable sizes (mm² / AWG, cores), loads, earthing system (TN-S, TN-C-S, TT, IT), RCD/ELR, surge protection, generator / ATS, capacitor banks.
+
+SAFETY REVIEW GUIDANCE (advisory; ISO 13849-1, IEC 62061, IEC 60204-1, ISO 13850, ISO 14119, IEC 61496, ISO/TR 24119, ANSI B11.19 / B11.26, NFPA 79)
+For each safety function (E-stop, guard interlock, light curtain, two-hand control, enabling device, safe speed, muting...) trace input device(s) -> logic (safety relay / safety PLC / standard relay / standard PLC) -> output devices (contactors, valves, drive STO).
+Check: number of channels at input, logic and output; feedback / EDM of output contactors (NC mirror contacts in the feedback loop); cross-fault / short-circuit detection (test pulses, channels at different potentials); reset type (automatic, manual, monitored manual) and reset location; stop category 0/1/2 (off-delay outputs, timers); reliance on a standard PLC or standard relays in the safety path; series-connected interlock switches (fault masking, ISO/TR 24119); common-cause weaknesses (both channels via one contact, cable, fuse or single contactor); positive-opening contacts on safety inputs; non-safety devices in the safety path; bypass, jumper, muting or maintenance override; whether the stop removes all hazardous energy (pneumatic / hydraulic valves, drive STO); restart prevention after power loss; lockable main disconnect for LOTO.
+Suggesting an ISO 13849-1 category: B/1 = single channel, no monitoring; 2 = single channel with periodic test; 3 = dual channel, single-fault tolerant, most faults detected (typical safety relay with dual inputs and EDM); 4 = dual channel with cross-fault detection, fault accumulation considered. PL also depends on MTTFd, DCavg and CCF, so never state a PL as certain from a drawing: give the likely range and name the missing data (B10D values, operations per year).`;
+
+const SCHEMA = `{
+ "sheet": {"title": "", "drawing_no": "", "sheet_no": "", "revision": "", "standard_detected": "IEC | NEMA/JIC | Mixed | Unknown", "drawing_type": "control | safety | power | SLD | PLC I/O | mixed", "image_quality": "good | fair | poor", "notes": ""},
+ "summary": "3-6 plain-English sentences: what this sheet is and what it does",
+ "components": [{"tag": "-K1", "type": "Safety relay", "symbol": "what the symbol looks like / symbol standard", "function": "what it does in this circuit", "ratings": "e.g. 24VDC, 3kW, 10A", "location": "sheet/column or rung", "safety_related": true, "confidence": "high | medium | low"}],
+ "connections": [{"from": "-S1:12", "to": "-K1:S12", "wire": "wire no. or colour", "via": "terminal, cable or contact in between", "signal": "e.g. E-stop channel 1", "confidence": "high | medium | low"}],
+ "circuits": [{"name": "e.g. Motor M1 start/stop", "description": "", "sequence": ["step 1", "step 2"]}],
+ "safety_functions": [{"name": "", "input_devices": "", "logic": "", "output_devices": "", "channels": "single | dual | unclear", "edm": "yes | no | unclear", "cross_fault_detection": "yes | no | unclear", "reset": "automatic | manual | monitored manual | unclear", "stop_category": "0 | 1 | 2 | unclear", "suggested_category": "B | 1 | 2 | 3 | 4 | unclear", "likely_pl": "e.g. PLc-PLd | unclear", "rationale": ""}],
+ "findings": [{"severity": "critical | major | minor | info", "title": "", "detail": "", "reference": "tags / terminals / location", "recommendation": "", "standard": "clause if relevant", "confidence": "high | medium | low"}],
+ "sld": {"present": false, "supply": "", "incomer": "", "busbar": "", "earthing": "", "feeders": [{"tag": "", "device": "", "rating": "", "cable": "", "load": ""}], "notes": ""},
+ "cross_references": [{"ref": "/5.3", "meaning": ""}],
+ "unreadable": ["areas or text that could not be read reliably"],
+ "verify": ["specific things the consultant should check on site or in other sheets"]
+}`;
+
+const RULES = `RULES
+- Report only what the drawing shows. Copy tags, terminal numbers and wire numbers exactly. Write "?" for characters you cannot read. Never invent a device.
+- Anything inferred rather than read goes in with confidence "low" (or "medium" if well supported) and the reason in the text.
+- Use the zoomed sections to read small text; use the full view for overall structure and to join wires that cross section edges.
+- Keep each text field short (under about 200 characters). At most 80 components and 120 connections; prioritise safety and control paths over lighting, sockets and similar.
+- Findings are for a machine safety consultant: be specific (tags, terminals), cite the standard clause when you can, and say what to verify. Include positive observations as "info".
+- If this is not an electrical drawing, say so in "summary" and leave the lists empty.
+- Reply with the JSON object only.`;
+
+/* ---------- Example report shown before the first analysis ---------- */
+const EXAMPLE = {
+  sheet:{title:"Example: E-stop and guard door circuit",drawing_no:"EX-001",sheet_no:"4",revision:"B",standard_detected:"IEC",drawing_type:"safety",image_quality:"good",notes:"Example data to show the report layout. Not from your drawings."},
+  summary:"A dual-channel emergency stop (-S1) and a single guard door switch (-B1) feed a safety relay (-K1). The relay's two safety outputs drive contactors -Q1 and -Q2 in series, which switch motor -M1. Contactor NC mirror contacts are wired in the relay's feedback loop, and a reset push button (-S2) restarts the relay.",
+  components:[
+    {tag:"-S1",type:"Emergency stop push button",symbol:"Mushroom head, latching, 2 NC with positive opening",function:"E-stop input, channels 1 and 2",ratings:"",location:"4.2",safety_related:true,confidence:"high"},
+    {tag:"-B1",type:"Guard interlock switch",symbol:"Position switch, 1 NC positive opening",function:"Guard door closed monitoring",ratings:"",location:"4.3",safety_related:true,confidence:"high"},
+    {tag:"-K1",type:"Safety relay",symbol:"Module box, terminals S11-S34, 13-24",function:"Monitors E-stop and guard, drives Q1/Q2",ratings:"24 VDC",location:"4.4",safety_related:true,confidence:"high"},
+    {tag:"-S2",type:"Reset push button",symbol:"Push button, 1 NO",function:"Manual reset in S33-S34",ratings:"",location:"4.5",safety_related:true,confidence:"high"},
+    {tag:"-Q1",type:"Contactor",symbol:"Coil A1/A2, 3 main poles, NC mirror 21-22",function:"Safety output contactor 1",ratings:"AC-3 4 kW",location:"4.6",safety_related:true,confidence:"high"},
+    {tag:"-Q2",type:"Contactor",symbol:"Coil A1/A2, 3 main poles, NC mirror 21-22",function:"Safety output contactor 2",ratings:"AC-3 4 kW",location:"4.7",safety_related:true,confidence:"high"},
+    {tag:"-M1",type:"3-phase motor",symbol:"Circle with M 3~",function:"Hazardous drive",ratings:"3 kW",location:"2.4",safety_related:false,confidence:"medium"}
+  ],
+  connections:[
+    {from:"-S1:12",to:"-K1:S12",wire:"401",via:"-X2:5",signal:"E-stop channel 1",confidence:"high"},
+    {from:"-S1:22",to:"-K1:S22",wire:"403",via:"-X2:7",signal:"E-stop channel 2",confidence:"high"},
+    {from:"-B1:12",to:"-S1:11",wire:"405",via:"",signal:"Guard switch in series with channel 1 only",confidence:"medium"},
+    {from:"-K1:14",to:"-Q1:A1",wire:"410",via:"",signal:"Safety output 1",confidence:"high"},
+    {from:"-K1:24",to:"-Q2:A1",wire:"411",via:"",signal:"Safety output 2",confidence:"high"},
+    {from:"-Q1:22",to:"-Q2:21",wire:"412",via:"",signal:"Feedback loop (EDM) into S33",confidence:"high"}
+  ],
+  circuits:[{name:"Safety relay start-up",description:"How the machine becomes ready to run.",sequence:["E-stop released and guard closed: S11-S12 and S21-S22 closed.","Operator presses -S2; the relay checks that Q1 and Q2 NC contacts are closed.","-K1 outputs 13-14 and 23-24 close; Q1 and Q2 pull in.","Opening the guard or pressing the E-stop drops both outputs immediately (stop category 0)."]}],
+  safety_functions:[
+    {name:"Emergency stop",input_devices:"-S1 (2 NC)",logic:"-K1 safety relay",output_devices:"-Q1, -Q2 in series",channels:"dual",edm:"yes",cross_fault_detection:"unclear",reset:"monitored manual",stop_category:"0",suggested_category:"3",likely_pl:"PLd (data needed)",rationale:"Dual channel input and outputs with EDM. Cross-fault detection depends on relay type."},
+    {name:"Guard door interlock",input_devices:"-B1 (1 NC)",logic:"-K1 safety relay",output_devices:"-Q1, -Q2",channels:"single",edm:"yes",cross_fault_detection:"no",reset:"monitored manual",stop_category:"0",suggested_category:"1",likely_pl:"PLc at most",rationale:"The single guard contact sits in channel 1 only, so one fault can defeat the function."}
+  ],
+  findings:[
+    {severity:"major",title:"Guard switch is single channel",detail:"-B1 has one NC contact in series with E-stop channel 1. A welded contact or a short across -B1 goes undetected.",reference:"-B1:11-12, -K1:S11-S12",recommendation:"Use a 2-NC interlock (or coded/RFID switch) wired to both channels.",standard:"ISO 13849-1 cl. 6.2.6; ISO 14119",confidence:"high"},
+    {severity:"minor",title:"Reset location not shown",detail:"The drawing does not show where -S2 is mounted. It must give a clear view of the danger zone.",reference:"-S2",recommendation:"Confirm on site.",standard:"ISO 13849-1 cl. 5.2.2",confidence:"medium"},
+    {severity:"info",title:"Contactor feedback is monitored",detail:"Q1 and Q2 NC mirror contacts are in series in the feedback loop.",reference:"-Q1:21-22, -Q2:21-22",recommendation:"",standard:"IEC 60947-4-1 Annex F",confidence:"high"}
+  ],
+  sld:{present:false},
+  cross_references:[{ref:"/2.4",meaning:"Q1 main poles on sheet 2 column 4"}],
+  unreadable:[],
+  verify:["Safety relay model (to confirm cross-fault detection and category).","B10D values of -S1, -B1 and contactors, and operations per year, to calculate PL.","Whether hydraulic or pneumatic energy is also removed on E-stop."]
+};
+
+/* ---------- Utilities ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const arr = v => Array.isArray(v) ? v : [];
+const str = v => v == null ? "" : (typeof v === "object" ? JSON.stringify(v) : String(v));
+const SEV = ["critical","major","minor","info"];
+const sevKey = s => { s = String(s||"").toLowerCase(); return SEV.includes(s) ? s : "info"; };
+const confKey = s => { s = String(s||"").toLowerCase(); return ["high","medium","low"].includes(s) ? s : "medium"; };
+const loadScript = src => new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Could not load " + src)); document.head.appendChild(s); });
+
+const state = {
+  sheets: [], settings: {type:"auto", std:"auto", detail:"standard", depth:"thorough"},
+  report: EXAMPLE, isExample: true, tab: "overview",
+  imgSets: [], // [{name, blobs, desc}] from the last analysis, reused by chat
+  chat: [], busy: false, ctl: null, filter: "", safetyOnly: false
+};
+let sample = null, caps = null, db = null, downloads = null;
+
+/* ---------- Capabilities ---------- */
+(async () => {
+  const c = window.claude;
+  if (!c || !c.use) { showCap("Open this page on claude.ai while signed in to read drawings. The example report below shows what you get."); renderHistory([]); return; }
+  c.use("sample").then(async s => {
+    sample = s;
+    if (!s) { showCap("Claude isn't available in this view. Open the page on claude.ai while signed in to read drawings."); return; }
+    caps = await s.limits().catch(() => null);
+    if (!caps?.images) showCap("This view can't send images to Claude, so drawings can't be read here. Try the Claude app or claude.ai in Chrome.");
+  });
+  c.use("downloads").then(d => { downloads = d; renderReport(); });
+  c.use("db").then(d => { db = d; startHistory(); });
+})();
+function showCap(msg){ const b = $("#capBanner"); b.textContent = msg; b.hidden = false; }
+
+/* ---------- Settings ---------- */
+document.querySelectorAll(".seg").forEach(seg => {
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    state.settings[seg.dataset.key] = b.dataset.v;
+  });
+});
+
+/* ---------- Loading drawings ---------- */
+const fileIn = $("#fileIn"), camIn = $("#camIn"), drop = $("#drop");
+$("#pickBtn").onclick = () => fileIn.click();
+$("#camBtn").onclick = () => camIn.click();
+fileIn.onchange = () => { addFiles([...fileIn.files]); fileIn.value = ""; };
+camIn.onchange = () => { addFiles([...camIn.files]); camIn.value = ""; };
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => addFiles([...(e.dataTransfer?.files || [])]));
+
+let pdfjs = null;
+async function loadPdfJs(){
+  if (pdfjs) return pdfjs;
+  const base = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  await loadScript(base + "pdf.min.js");
+  await loadScript(base + "pdf.worker.min.js"); // runs on the page thread (workers from other hosts are blocked)
+  pdfjs = window.pdfjsLib;
+  pdfjs.GlobalWorkerOptions.workerSrc = base + "pdf.worker.min.js";
+  return pdfjs;
+}
+function newCanvas(w, h){ const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0,0,c.width,c.height); return c; }
+
+async function addFiles(files){
+  if (!files.length) return;
+  hideErr();
+  for (const f of files) {
+    try {
+      if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
+        setProgress(`Opening ${f.name}…`);
+        const lib = await loadPdfJs();
+        const doc = await lib.getDocument({data: await f.arrayBuffer()}).promise;
+        const n = Math.min(doc.numPages, 30);
+        for (let p = 1; p <= n; p++) {
+          setProgress(`Rendering ${f.name}, page ${p} of ${n}…`);
+          const page = await doc.getPage(p);
+          const v1 = page.getViewport({scale:1});
+          const scale = Math.min(5, 3600 / Math.max(v1.width, v1.height));
+          const vp = page.getViewport({scale});
+          const c = newCanvas(vp.width, vp.height);
+          await page.render({canvasContext: c.getContext("2d"), viewport: vp}).promise;
+          pushSheet(`${f.name} · p${p}`, c);
+        }
+        if (doc.numPages > 30) showErr(`${f.name} has ${doc.numPages} pages. The first 30 were added; remove the ones you don't need.`);
+      } else {
+        const bmp = await createImageBitmap(f, {imageOrientation:"from-image"}).catch(() => createImageBitmap(f));
+        const k = Math.min(1, 4200 / Math.max(bmp.width, bmp.height));
+        const c = newCanvas(bmp.width * k, bmp.height * k);
+        const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(bmp, 0, 0, c.width, c.height);
+        pushSheet(f.name, c);
+      }
+    } catch (e) {
+      showErr(`Couldn't open ${f.name}. Use JPG, PNG or PDF (iPhone HEIC photos need converting first).`);
+    }
+  }
+  setProgress(null);
+}
+function pushSheet(name, canvas){
+  state.sheets.push({id: Math.random().toString(36).slice(2), name, canvas, thumb: thumbOf(canvas, 160, .7)});
+  renderSheets();
+}
+function thumbOf(c, side, q){ const k = side / Math.max(c.width, c.height); const t = newCanvas(c.width*k, c.height*k); t.getContext("2d").drawImage(c, 0, 0, t.width, t.height); return t.toDataURL("image/jpeg", q); }
+function rotateSheet(s){
+  const c = newCanvas(s.canvas.height, s.canvas.width), x = c.getContext("2d");
+  x.translate(c.width, 0); x.rotate(Math.PI/2); x.drawImage(s.canvas, 0, 0);
+  s.canvas = c; s.thumb = thumbOf(c, 160, .7); renderSheets();
+}
+const ICON_ROT = '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function renderSheets(){
+  const el = $("#sheets");
+  el.innerHTML = state.sheets.map((s, i) => `
+    <div class="sheet" data-id="${s.id}">
+      <img src="${s.thumb}" alt="">
+      <div style="min-width:0"><div class="nm" title="${esc(s.name)}">${i+1}. ${esc(s.name)}</div><div class="dm">${s.canvas.width}×${s.canvas.height}px</div></div>
+      <div class="acts"><button class="icon-btn" data-act="rot" aria-label="Rotate sheet ${i+1}">${ICON_ROT}</button><button class="icon-btn" data-act="del" aria-label="Remove sheet ${i+1}">${ICON_X}</button></div>
+    </div>`).join("");
+}
+$("#sheets").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b || state.busy) return;
+  const id = b.closest(".sheet").dataset.id, s = state.sheets.find(x => x.id === id);
+  if (b.dataset.act === "rot") rotateSheet(s);
+  if (b.dataset.act === "del") { state.sheets = state.sheets.filter(x => x !== s); renderSheets(); }
+});
+
+/* ---------- Image sets: full view + overlapping zoomed sections ---------- */
+function crop(src, sx, sy, sw, sh, maxSide){
+  const k = Math.min(1, maxSide / Math.max(sw, sh));
+  const c = newCanvas(sw*k, sh*k), x = c.getContext("2d");
+  x.imageSmoothingQuality = "high"; x.drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c;
+}
+const toBlob = c => new Promise(r => c.toBlob(r, "image/jpeg", .92));
+async function imageSet(sheet, detail, maxCount){
+  const c = sheet.canvas, W = c.width, H = c.height;
+  let grid = detail === "high" ? [3,3] : [2,2];
+  if (Math.max(W, H) < 1500) grid = [1,1];
+  const options = [[3,3],[3,2],[2,2],[2,1],[1,1]];
+  const fits = g => g[0]*g[1] + (g[0]*g[1] > 1 ? 1 : 0) <= maxCount;
+  if (!fits(grid)) grid = options.find(g => g[0]*g[1] <= grid[0]*grid[1] && fits(g)) || [1,1];
+  let [cols, rows] = grid;
+  if (H > W && cols !== rows) [cols, rows] = [rows, cols];
+  const blobs = [], desc = [];
+  blobs.push(await toBlob(crop(c, 0, 0, W, H, 2000)));
+  desc.push("Image 1: the full sheet.");
+  if (cols * rows > 1) {
+    const ov = 0.1, tw = W / cols, th = H / rows;
+    const rn = rows === 3 ? ["top","middle","bottom"] : rows === 2 ? ["top","bottom"] : [""];
+    const cn = cols === 3 ? ["left","centre","right"] : cols === 2 ? ["left","right"] : [""];
+    for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+      const x0 = Math.max(0, q*tw - tw*ov), y0 = Math.max(0, r*th - th*ov);
+      const x1 = Math.min(W, (q+1)*tw + tw*ov), y1 = Math.min(H, (r+1)*th + th*ov);
+      blobs.push(await toBlob(crop(c, x0, y0, x1-x0, y1-y0, 1600)));
+      desc.push(`Image ${blobs.length}: zoomed ${[rn[r], cn[q]].filter(Boolean).join("-")} section (about 10% overlap with neighbours).`);
+    }
+  }
+  return {name: sheet.name, blobs, desc};
+}
+
+/* ---------- Prompts ---------- */
+const TYPE_TXT = {auto:"Detect the drawing type.", control:"This is a control circuit drawing.", safety:"This is a safety circuit drawing; give the safety review extra depth.", power:"This is a power distribution drawing or single-line diagram; fill the sld section in full.", plc:"This is a PLC I/O drawing; list each I/O point as a component (tag = address) with its field device."};
+const STD_TXT = {auto:"Detect the drawing standard (IEC or NEMA/JIC).", iec:"The drawing follows IEC conventions.", nema:"The drawing follows NEMA / JIC / ANSI ladder conventions."};
+function extractPrompt(i, n, set){
+  const s = state.settings, ctx = $("#ctx").value.trim();
+  return `You are an expert electrical controls engineer helping an ANSI B11 certified machine safety consultant study a drawing set. Read the attached drawing sheet and return a structured analysis as JSON.
+
+This is sheet ${i+1} of ${n} ("${set.name}"). ${TYPE_TXT[s.type]} ${STD_TXT[s.std]}
+${ctx ? "Consultant's context: " + ctx.slice(0, 1500) + "\n" : ""}
+The images are:
+${set.desc.join("\n")}
+Photos may be rotated 90°, skewed, or show other pages and the desk around the sheet. Read text in whichever direction it runs and ignore anything outside the drawing border (the title block belongs to the drawing).
+
+${KNOWLEDGE}
+
+${RULES}
+
+Return exactly this JSON shape (fill every field; use empty strings or empty arrays where nothing applies):
+${SCHEMA}`;
+}
+function synthPrompt(per){
+  const compact = per.map((r, i) => ({sheet_index: i+1, sheet: r.sheet, summary: r.summary,
+    components: r.components.map(c => [c.tag, c.type, c.function, c.location].join(" | ")),
+    connections: r.connections.filter(c => /safe|stop|guard|curtain|reset|edm|feedback|interlock/i.test(c.signal + c.from + c.to)).slice(0, 60).map(c => `${c.from} -> ${c.to} (${c.signal})`),
+    safety_functions: r.safety_functions, findings: r.findings, cross_references: r.cross_references, verify: r.verify}));
+  let data = JSON.stringify(compact);
+  if (data.length > 52000) data = data.slice(0, 52000) + "…(truncated)";
+  return `You are an expert electrical controls engineer helping an ANSI B11 certified machine safety consultant. Below are per-sheet analyses of one drawing set (${per.length} sheets). Combine them into a set-level view: follow cross-references between sheets, join each safety function end to end (input on one sheet, logic on another, outputs on a third), and remove duplicates.
+
+${KNOWLEDGE}
+
+PER-SHEET DATA:
+${data}
+
+Reply with JSON only, in this shape:
+{"title": "name of the drawing set / machine", "summary": "5-8 plain-English sentences about the whole set", "circuits": [{"name": "", "description": "", "sequence": [""]}], "safety_functions": [same fields as the per-sheet data], "findings": [same fields as the per-sheet data, set-level and deduplicated], "verify": [""]}`;
+}
+
+/* ---------- Normalising Claude's answer ---------- */
+function normalize(r, sheetIdx){
+  r = (r && typeof r === "object" && !Array.isArray(r)) ? r : {};
+  const out = {
+    sheet: (r.sheet && typeof r.sheet === "object") ? r.sheet : {},
+    summary: str(r.summary),
+    components: arr(r.components).filter(x => x && typeof x === "object"),
+    connections: arr(r.connections).filter(x => x && typeof x === "object"),
+    circuits: arr(r.circuits).filter(x => x && typeof x === "object"),
+    safety_functions: arr(r.safety_functions).filter(x => x && typeof x === "object"),
+    findings: arr(r.findings).filter(x => x && typeof x === "object"),
+    sld: (r.sld && typeof r.sld === "object") ? r.sld : {present:false},
+    cross_references: arr(r.cross_references).filter(x => x && typeof x === "object"),
+    unreadable: arr(r.unreadable).map(str),
+    verify: arr(r.verify).map(str)
+  };
+  if (sheetIdx != null) {
+    for (const k of ["components","connections","findings"]) out[k].forEach(x => x.sheet = sheetIdx + 1);
+  }
+  return out;
+}
+function mergeReports(per){
+  const m = normalize({});
+  m.sheet = {...per[0].sheet, title: per[0].sheet.title || "Drawing set", sheet_no: `${per.length} sheets`};
+  m.summary = per.map((r, i) => `Sheet ${i+1}: ${r.summary}`).join("\n");
+  for (const r of per) for (const k of ["components","connections","circuits","safety_functions","findings","cross_references","unreadable","verify"]) m[k].push(...r[k]);
+  const slds = per.filter(r => r.sld && (r.sld.present === true || arr(r.sld.feeders).length));
+  if (slds.length) m.sld = {...slds[0].sld, present: true, feeders: slds.flatMap(r => arr(r.sld.feeders))};
+  m.sheets = per.map(r => r.sheet);
+  return m;
+}
+
+/* ---------- Run analysis ---------- */
+$("#goBtn").onclick = analyze;
+$("#stopBtn").onclick = () => state.ctl?.abort();
+let timer = null, progMsg = "";
+function setProgress(msg){
+  const p = $("#progress");
+  clearInterval(timer);
+  if (!msg) { p.hidden = true; return; }
+  progMsg = msg;
+  const t0 = Date.now();
+  const draw = () => { p.innerHTML = `${esc(progMsg)}<div class="t">${Math.round((Date.now()-t0)/1000)} s</div>`; };
+  draw(); p.hidden = false; timer = setInterval(draw, 1000);
+}
+function showErr(msg){ const e = $("#err"); e.textContent = msg; e.hidden = false; }
+function hideErr(){ $("#err").hidden = true; }
+const ERR = {
+  not_granted: "Claude access was declined for this page. Reload the page to be asked again.",
+  sampling_disabled: "Claude isn't available for this account.",
+  rate_limited: "You've reached your Claude usage limit or sent requests too quickly. Wait a few minutes, then try again.",
+  session_expired: "Your claude.ai session expired. Sign in again, then retry.",
+  images_unavailable: "This view can't send images to Claude. Open the page on claude.ai in Chrome or in the Claude app.",
+  image_rejected: "Claude couldn't accept one of the images. Try a JPG or PNG photo.",
+  invalid_json: "The answer came back incomplete, usually because the sheet is very dense. Try again, choose Fast, or crop the photo to half the sheet.",
+  prompt_too_large: "Too much text for one request. Remove some sheets and try again.",
+  refused: "Claude declined to analyse this image. Check that it is an electrical drawing.",
+  empty_completion: "Claude returned nothing. Try again with a clearer photo.",
+  upstream_error: "Connection problem while reading the drawing. Try again."
+};
+const errMsg = e => ERR[e?.code] || (e?.message ? `Something went wrong: ${e.message}` : ERR.upstream_error);
+
+async function analyze(){
+  hideErr();
+  if (!sample) { showErr("Open this page on claude.ai while signed in to read drawings."); return; }
+  if (!caps?.images) { showErr(ERR.images_unavailable); return; }
+  if (!state.sheets.length) { showErr("Add at least one drawing first."); return; }
+  state.busy = true; state.ctl = new AbortController();
+  $("#goBtn").disabled = true; $("#stopBtn").hidden = false;
+  const n = state.sheets.length, per = [], sets = [];
+  const tier = state.settings.depth === "fast" ? "default" : "complex";
+  try {
+    for (let i = 0; i < n; i++) {
+      setProgress(`Sheet ${i+1} of ${n}: preparing zoomed sections…`);
+      const set = await imageSet(state.sheets[i], state.settings.detail, caps.images.maxCount || 5);
+      sets.push(set);
+      setProgress(`Sheet ${i+1} of ${n}: Claude is reading the drawing. This usually takes 1–3 minutes.`);
+      const r = await sample.json(extractPrompt(i, n, set), {
+        images: set.blobs, modelTier: tier, signal: state.ctl.signal,
+        onText: ({text}) => { progMsg = `Sheet ${i+1} of ${n}: writing the report… ${Math.round(text.length/100)/10}k characters`; }
+      });
+      per.push(normalize(r, n > 1 ? i : null));
+    }
+    let rep = per.length === 1 ? per[0] : mergeReports(per);
+    if (per.length > 1) {
+      setProgress("Joining the sheets: cross-references and end-to-end safety functions…");
+      try {
+        const s = await sample.json(synthPrompt(per), {modelTier: tier, signal: state.ctl.signal});
+        if (s && typeof s === "object") {
+          rep.sheet.title = str(s.title) || rep.sheet.title;
+          rep.summary = str(s.summary) || rep.summary;
+          if (arr(s.circuits).length) rep.circuits = arr(s.circuits);
+          if (arr(s.safety_functions).length) rep.safety_functions = arr(s.safety_functions);
+          if (arr(s.findings).length) rep.findings = arr(s.findings);
+          if (arr(s.verify).length) rep.verify = arr(s.verify).map(str);
+        }
+      } catch (e) {
+        if (e?.code === "cancelled") throw e;
+        rep.note = "The sheets could not be joined into one set-level review, so results are shown sheet by sheet.";
+      }
+    }
+    finish(rep, sets);
+  } catch (e) {
+    if (per.length) {
+      finish(per.length === 1 ? per[0] : mergeReports(per), sets.slice(0, per.length));
+      state.report.note = `Stopped after ${per.length} of ${n} sheets. ${e?.code === "cancelled" ? "" : errMsg(e)}`;
+      renderReport();
+    } else if (e?.code !== "cancelled") showErr(errMsg(e));
+  } finally {
+    state.busy = false; setProgress(null);
+    $("#goBtn").disabled = false; $("#stopBtn").hidden = true;
+  }
+}
+function finish(rep, sets){
+  rep.meta = {createdAt: Date.now(), sheets: state.sheets.slice(0, sets.length).map(s => s.name), settings: {...state.settings}};
+  state.report = rep; state.isExample = false; state.imgSets = sets; state.chat = []; state.tab = "overview";
+  renderReport();
+  saveHistory(rep, state.sheets[0]);
+  if (window.innerWidth < 980) $("#report").scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+/* ---------- Report rendering ---------- */
+function conf(c){ const k = confKey(c); return `<span class="conf ${k}">${k}</span>`; }
+function counts(r){
+  const f = {critical:0, major:0, minor:0, info:0};
+  r.findings.forEach(x => f[sevKey(x.severity)]++);
+  return f;
+}
+function renderReport(){
+  const r = state.report, el = $("#report");
+  const s = r.sheet || {}, f = counts(r);
+  const tabs = [
+    ["overview","Overview",""],
+    ["components","Components",r.components.length],
+    ["connections","Connections",r.connections.length],
+    ["safety","Safety review",r.findings.length],
+    ["sld","SLD",""],
+    ["verify","To verify",r.verify.length + r.unreadable.length],
+    ["chat","Ask",""]
+  ];
+  if (!(r.sld && (r.sld.present === true || arr(r.sld.feeders).length))) tabs.splice(4, 1);
+  if (!tabs.find(t => t[0] === state.tab)) state.tab = "overview";
+  const metaRow = (k, v) => v ? `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>` : "";
+  el.innerHTML = `
+    <div class="rhead">
+      ${state.isExample ? `<span class="ex-tag">EXAMPLE REPORT · SAMPLE DATA</span>` : ""}
+      <h2>${esc(s.title || (r.meta?.sheets?.[0]) || "Drawing analysis")}</h2>
+      <dl class="meta" style="margin:0">
+        ${metaRow("Drawing no.", s.drawing_no)}${metaRow("Sheet", s.sheet_no)}${metaRow("Revision", s.revision)}
+        ${metaRow("Standard", s.standard_detected)}${metaRow("Type", s.drawing_type)}${metaRow("Image quality", s.image_quality)}
+      </dl>
+      <div class="counts">
+        <span class="pill n">${r.components.length} components</span>
+        <span class="pill n">${r.connections.length} connections</span>
+        <span class="pill n">${r.safety_functions.length} safety functions</span>
+        ${f.critical ? `<span class="pill crit">${f.critical} critical</span>` : ""}
+        ${f.major ? `<span class="pill major">${f.major} major</span>` : ""}
+        ${f.minor ? `<span class="pill minor">${f.minor} minor</span>` : ""}
+        ${f.info ? `<span class="pill info">${f.info} info</span>` : ""}
+      </div>
+      ${r.note ? `<div class="banner warn">${esc(r.note)}</div>` : ""}
+      ${s.image_quality === "poor" ? `<div class="banner warn">Image quality is poor, so expect misread text. Retake the photo closer and square-on, or use the PDF.</div>` : ""}
+      ${state.isExample ? "" : exportsHtml()}
+    </div>
+    <div class="tabs" role="tablist">${tabs.map(([k, l, c]) => `<button role="tab" data-tab="${k}" aria-selected="${state.tab === k}">${l}${c !== "" ? `<span class="c">${c}</span>` : ""}</button>`).join("")}</div>
+    <div class="tabpanel" id="tabpanel"></div>`;
+  renderTab();
+}
+$("#report").addEventListener("click", e => {
+  const t = e.target.closest("[data-tab]");
+  if (t) { state.tab = t.dataset.tab; $("#report").querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b === t)); renderTab(); return; }
+  const x = e.target.closest("[data-export]"); if (x) doExport(x.dataset.export, x);
+  const q = e.target.closest("[data-q]"); if (q) { $("#chatIn").value = q.dataset.q; ask(); }
+});
+function exportsHtml(){
+  if (!downloads) return "";
+  return `<div class="exports"><button class="btn small" data-export="xlsx" type="button">Download Excel</button><button class="btn small" data-export="html" type="button">Download report</button><button class="btn small" data-export="json" type="button">Download JSON</button><span id="exMsg" class="empty"></span></div>`;
+}
+function renderTab(){
+  const r = state.report, p = $("#tabpanel");
+  if (state.tab === "overview") p.innerHTML = overviewHtml(r);
+  if (state.tab === "components") { p.innerHTML = componentsHtml(); bindFilter(); }
+  if (state.tab === "connections") p.innerHTML = connectionsHtml(r);
+  if (state.tab === "safety") p.innerHTML = safetyHtml(r);
+  if (state.tab === "sld") p.innerHTML = sldHtml(r.sld);
+  if (state.tab === "verify") p.innerHTML = verifyHtml(r);
+  if (state.tab === "chat") { p.innerHTML = chatHtml(); bindChat(); }
+}
+function overviewHtml(r){
+  const paras = esc(r.summary).split(/\n+/).map(x => `<p class="summary">${x}</p>`).join("");
+  return `<h3 class="sec">Summary</h3>${paras || '<p class="empty">No summary.</p>'}
+    <h3 class="sec">How it works</h3>
+    ${r.circuits.length ? `<div class="circuits">${r.circuits.map(c => `
+      <div class="circuit"><h4>${esc(c.name)}</h4>${c.description ? `<p>${esc(c.description)}</p>` : ""}
+      ${arr(c.sequence).length ? `<ol>${arr(c.sequence).map(x => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}</div>`).join("")}</div>` : '<p class="empty">No circuit sequences identified.</p>'}
+    ${r.cross_references.length ? `<h3 class="sec">Cross-references</h3><div class="tbl-wrap"><table><thead><tr><th>Ref</th><th>Meaning</th></tr></thead><tbody>${r.cross_references.map(x => `<tr><td class="tag">${esc(x.ref)}</td><td>${esc(x.meaning)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
+}
+function componentsHtml(){
+  return `<div class="filter"><input type="search" id="cFilter" placeholder="Filter by tag, type or function" value="${esc(state.filter)}" aria-label="Filter components">
+    <label><input type="checkbox" id="cSafe" ${state.safetyOnly ? "checked" : ""}> Safety-related only</label></div>
+    <div id="cTable"></div>`;
+}
+function bindFilter(){
+  const draw = () => {
+    const q = state.filter.toLowerCase(), multi = state.report.components.some(c => c.sheet);
+    const rows = state.report.components.filter(c => (!state.safetyOnly || c.safety_related === true || c.safety_related === "true") && (!q || JSON.stringify(c).toLowerCase().includes(q)));
+    $("#cTable").innerHTML = rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tag</th><th>Device</th><th>Function in circuit</th><th>Ratings</th><th>Location</th>${multi ? "<th>Sheet</th>" : ""}<th>Confidence</th></tr></thead><tbody>
+      ${rows.map(c => `<tr><td class="tag">${esc(c.tag)}${c.safety_related === true || c.safety_related === "true" ? '<span class="sbadge" title="Safety-related">S</span>' : ""}</td>
+        <td>${esc(c.type)}${c.symbol ? `<div class="sub">${esc(c.symbol)}</div>` : ""}</td><td>${esc(c.function)}</td><td>${esc(c.ratings)}</td><td class="mono">${esc(c.location)}</td>${multi ? `<td class="mono">${esc(c.sheet)}</td>` : ""}<td>${conf(c.confidence)}</td></tr>`).join("")}
+      </tbody></table></div>` : '<p class="empty">No components match.</p>';
+  };
+  $("#cFilter").oninput = e => { state.filter = e.target.value; draw(); };
+  $("#cSafe").onchange = e => { state.safetyOnly = e.target.checked; draw(); };
+  draw();
+}
+function connectionsHtml(r){
+  if (!r.connections.length) return '<p class="empty">No connections listed.</p>';
+  const multi = r.connections.some(c => c.sheet);
+  return `<div class="tbl-wrap"><table><thead><tr><th>From</th><th>To</th><th>Wire</th><th>Via</th><th>Signal / purpose</th>${multi ? "<th>Sheet</th>" : ""}<th>Confidence</th></tr></thead><tbody>
+    ${r.connections.map(c => `<tr><td class="tag">${esc(c.from)}</td><td class="tag">${esc(c.to)}</td><td class="mono">${esc(c.wire)}</td><td class="mono">${esc(c.via)}</td><td>${esc(c.signal)}</td>${multi ? `<td class="mono">${esc(c.sheet)}</td>` : ""}<td>${conf(c.confidence)}</td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+function chipYN(label, v){
+  v = String(v || "unclear").toLowerCase();
+  const cls = /^(yes|dual|monitored manual)$/.test(v) ? "ok" : /^(no|single|automatic)$/.test(v) ? "major" : "info";
+  return `<span class="pill ${cls}"><b style="font-weight:500">${label}:</b> ${esc(v)}</span>`;
+}
+function safetyHtml(r){
+  const sorted = [...r.findings].sort((a, b) => SEV.indexOf(sevKey(a.severity)) - SEV.indexOf(sevKey(b.severity)));
+  return `<div class="disclaimer">Advisory review from the drawing only. Categories and PL ranges are suggestions: confirm with the actual devices, B10D/MTTFd data and a site inspection before relying on them.</div>
+    <h3 class="sec">Safety functions</h3>
+    ${r.safety_functions.length ? `<div class="sf-grid">${r.safety_functions.map(sf => `
+      <div class="sf"><h4>${esc(sf.name)}</h4>
+        <div class="chain"><div><span>Input</span><span>${esc(sf.input_devices)}</span></div><div><span>Logic</span><span>${esc(sf.logic)}</span></div><div><span>Output</span><span>${esc(sf.output_devices)}</span></div></div>
+        <div class="chips">${chipYN("Channels", sf.channels)}${chipYN("EDM", sf.edm)}${chipYN("Cross-fault", sf.cross_fault_detection)}${chipYN("Reset", sf.reset)}<span class="pill n">Stop cat. ${esc(sf.stop_category || "unclear")}</span></div>
+        <div class="catbox"><span class="big">Cat ${esc(sf.suggested_category || "?")}</span><span>${esc(sf.likely_pl || "")}<br><span class="empty">suggested</span></span></div>
+        ${sf.rationale ? `<p style="margin:0;font-size:13px">${esc(sf.rationale)}</p>` : ""}
+      </div>`).join("")}</div>` : '<p class="empty">No safety functions found on this drawing.</p>'}
+    <h3 class="sec">Findings</h3>
+    ${sorted.length ? `<div class="findings">${sorted.map(x => { const k = sevKey(x.severity); return `
+      <div class="finding ${k}"><div class="bar"></div><div class="body">
+        <h4><span class="pill ${k === "critical" ? "crit" : k}">${k}</span>${esc(x.title)}${x.sheet ? `<span class="empty mono">sheet ${esc(x.sheet)}</span>` : ""}</h4>
+        ${x.detail ? `<p>${esc(x.detail)}</p>` : ""}
+        ${x.recommendation ? `<p class="rec">→ ${esc(x.recommendation)}</p>` : ""}
+        <p class="ref">${esc([x.reference, x.standard].filter(Boolean).join(" · "))} ${x.confidence ? conf(x.confidence) : ""}</p>
+      </div></div>`; }).join("")}</div>` : '<p class="empty">No findings.</p>'}`;
+}
+function sldHtml(s){
+  s = s || {};
+  const kv = [["Supply", s.supply], ["Incomer", s.incomer], ["Busbar", s.busbar], ["Earthing", s.earthing]].filter(x => x[1]);
+  return `${kv.length ? `<dl class="meta">${kv.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : ""}
+    <h3 class="sec">Feeders</h3>
+    ${arr(s.feeders).length ? `<div class="tbl-wrap"><table><thead><tr><th>Tag</th><th>Device</th><th>Rating</th><th>Cable</th><th>Load</th></tr></thead><tbody>${arr(s.feeders).map(x => `<tr><td class="tag">${esc(x.tag)}</td><td>${esc(x.device)}</td><td class="mono">${esc(x.rating)}</td><td class="mono">${esc(x.cable)}</td><td>${esc(x.load)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="empty">No feeders listed.</p>'}
+    ${s.notes ? `<h3 class="sec">Notes</h3><p class="summary">${esc(s.notes)}</p>` : ""}`;
+}
+function verifyHtml(r){
+  return `<h3 class="sec">Check on site or in other sheets</h3>
+    ${r.verify.length ? `<ul class="checklist">${r.verify.map((v, i) => `<li><label><input type="checkbox" id="v${i}"> <span>${esc(v)}</span></label></li>`).join("")}</ul>` : '<p class="empty">Nothing listed.</p>'}
+    <h3 class="sec">Could not read reliably</h3>
+    ${r.unreadable.length ? `<ul class="plain">${r.unreadable.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : '<p class="empty">Nothing flagged.</p>'}`;
+}
+
+/* ---------- Chat ---------- */
+function md(t){
+  const lines = esc(t).split("\n"); let html = "", list = null;
+  const inline = s => s.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+  for (const ln of lines) {
+    const m = ln.match(/^\s*([-*]|\d+\.)\s+(.*)$/);
+    if (m) { const t = /\d/.test(m[1]) ? "ol" : "ul"; if (list !== t) { if (list) html += `</${list}>`; html += `<${t}>`; list = t; } html += `<li>${inline(m[2])}</li>`; continue; }
+    if (list) { html += `</${list}>`; list = null; }
+    const h = ln.match(/^#{1,4}\s+(.*)$/);
+    if (h) html += `<p><b>${inline(h[1])}</b></p>`; else if (ln.trim()) html += `<p>${inline(ln)}</p>`;
+  }
+  if (list) html += `</${list}>`;
+  return html;
+}
+const SUGGEST = ["Explain how the machine starts, step by step", "What happens when the E-stop is pressed?", "Which contacts are in series with the safety relay feedback loop?", "What would it take to reach Category 3 / PLd here?", "List all devices fed from the 24 V DC supply"];
+function chatHtml(){
+  const hasImgs = state.imgSets.length > 0;
+  return `<div class="chat">
+    ${state.isExample ? `<div class="banner info">Questions work after you read your own drawing. The example has no drawing attached.</div>` : ""}
+    <div class="msgs" id="msgs">${state.chat.length ? state.chat.map(m => `<div class="msg ${m.role === "user" ? "u" : "a"}">${m.role === "user" ? esc(m.content) : md(m.content)}</div>`).join("") : '<p class="empty">Ask anything about this drawing: a device, a wire, a sequence, a safety function.</p>'}</div>
+    <div class="suggest">${SUGGEST.map(q => `<button type="button" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+    <div class="composer"><textarea id="chatIn" placeholder="e.g. What de-energises -K3?" aria-label="Your question"></textarea><button class="btn primary" id="askBtn" type="button">Ask</button></div>
+    <div class="opts">
+      <label><input type="checkbox" id="withImg" ${hasImgs ? "checked" : "disabled"}> Include the drawing images (more accurate, uses more of your Claude allowance)</label>
+      ${state.imgSets.length > 1 ? `<label>Sheet <select id="imgSheet">${state.imgSets.map((s, i) => `<option value="${i}">${i+1}. ${esc(s.name)}</option>`).join("")}</select></label>` : ""}
+      ${!hasImgs && !state.isExample ? "<span>Saved reports answer from the report text only. Re-read the drawing to include images.</span>" : ""}
+    </div>
+  </div>`;
+}
+function bindChat(){
+  $("#askBtn").onclick = ask;
+  $("#chatIn").onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); } };
+  const m = $("#msgs"); m.scrollTop = m.scrollHeight;
+}
+async function ask(){
+  const box = $("#chatIn"), q = box.value.trim();
+  if (!q || state.busy) return;
+  if (state.isExample) return;
+  if (!sample) { showErr("Open this page on claude.ai while signed in to ask questions."); return; }
+  const withImg = $("#withImg")?.checked && state.imgSets.length;
+  const set = withImg ? state.imgSets[Number($("#imgSheet")?.value || 0)] : null;
+  const r = {...state.report}; delete r.meta;
+  let data = JSON.stringify(r); if (data.length > 38000) data = data.slice(0, 38000) + "…(truncated)";
+  const intro = `You are an expert electrical controls engineer helping an ANSI B11 certified machine safety consultant understand an electrical drawing. Answer their questions precisely and concisely: cite device tags, terminal numbers, wire numbers and sheet/column locations. Say clearly when something is not shown on the drawing or cannot be read, and separate what is shown from what you infer. Safety judgements are advisory. Use short paragraphs or bullets, no tables.
+
+${set ? `Attached images: ${set.desc.join(" ")} (sheet "${set.name}").` : "No images are attached; answer from the analysis below."}
+
+Analysis already extracted from the drawing (JSON):
+${data}`;
+  state.chat.push({role: "user", content: q});
+  const turns = [{role: "user", content: intro}, {role: "assistant", content: "Understood. I have the drawing analysis. What would you like to know?"}, ...state.chat.slice(-12)];
+  while (turns.length > 3 && turns[2].role !== "user") turns.splice(2, 1);
+  box.value = ""; renderTab();
+  const msgs = $("#msgs"), bubble = document.createElement("div");
+  bubble.className = "msg a"; bubble.textContent = "Thinking…"; msgs.appendChild(bubble); msgs.scrollTop = msgs.scrollHeight;
+  state.busy = true; $("#askBtn").disabled = true;
+  try {
+    const {text} = await sample(turns, {cache: false, images: set ? set.blobs : undefined, modelTier: "default",
+      onText: ({text}) => { bubble.innerHTML = md(text); msgs.scrollTop = msgs.scrollHeight; }});
+    state.chat.push({role: "assistant", content: text});
+  } catch (e) {
+    const keep = e?.text || "";
+    if (keep) state.chat.push({role: "assistant", content: keep + "\n\n(Answer interrupted.)"});
+    else state.chat.pop();
+    showErr(errMsg(e));
+  } finally {
+    state.busy = false; if (state.tab === "chat") renderTab();
+  }
+}
+
+/* ---------- Exports ---------- */
+function fileBase(){ return (state.report.sheet?.title || "schematic-report").replace(/[^\w\- ]+/g, "").trim().slice(0, 60) || "schematic-report"; }
+async function doExport(kind, btn){
+  if (!downloads) return;
+  const msg = $("#exMsg"); msg.textContent = "Preparing…"; btn.disabled = true;
+  try {
+    let data, name;
+    if (kind === "json") { data = JSON.stringify(state.report, null, 2); name = fileBase() + ".json"; }
+    if (kind === "html") { data = reportDoc(); name = fileBase() + ".html"; }
+    if (kind === "xlsx") {
+      if (!window.XLSX) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+      const r = state.report, wb = XLSX.utils.book_new();
+      const add = (rows, nm) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{note: "none"}]), nm);
+      const flat = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, Array.isArray(v) ? v.join("; ") : str(v)]));
+      add([{field: "Title", value: r.sheet?.title}, {field: "Drawing no.", value: r.sheet?.drawing_no}, {field: "Standard", value: r.sheet?.standard_detected}, {field: "Type", value: r.sheet?.drawing_type}, {field: "Summary", value: r.summary}].map(flat), "Summary");
+      add(r.components.map(flat), "Components");
+      add(r.connections.map(flat), "Connections");
+      add(r.safety_functions.map(flat), "Safety functions");
+      add(r.findings.map(flat), "Findings");
+      add(r.circuits.map(c => flat({name: c.name, description: c.description, sequence: arr(c.sequence)})), "Sequences");
+      if (arr(r.sld?.feeders).length) add(r.sld.feeders.map(flat), "SLD feeders");
+      add([...r.verify.map(v => ({type: "verify", item: v})), ...r.unreadable.map(v => ({type: "unreadable", item: v}))], "To verify");
+      data = new Blob([XLSX.write(wb, {bookType: "xlsx", type: "array"})]); name = fileBase() + ".xlsx";
+    }
+    await downloads.save({filename: name, data});
+    msg.textContent = "Saved.";
+  } catch (e) {
+    msg.textContent = e?.code === "declined" ? "" : "Couldn't save the file.";
+  } finally { btn.disabled = false; }
+}
+function reportDoc(){
+  const r = state.report, s = r.sheet || {};
+  const tbl = (cols, rows) => rows.length ? `<table><tr>${cols.map(c => `<th>${esc(c[1])}</th>`).join("")}</tr>${rows.map(x => `<tr>${cols.map(c => `<td>${esc(str(x[c[0]]))}</td>`).join("")}</tr>`).join("")}</table>` : "<p>None.</p>";
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(s.title || "Schematic report")}</title>
+<style>body{font:14px/1.5 Arial,sans-serif;color:#16222c;max-width:1000px;margin:24px auto;padding:0 16px}h1{margin:0 0 4px}h2{border-bottom:3px solid #f2b705;padding-bottom:4px;margin-top:28px}table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{border:1px solid #cfd6d0;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eef1ec}.d{color:#56636e;font-size:12px}</style></head><body>
+<h1>${esc(s.title || "Schematic report")}</h1>
+<p class="d">${esc([s.drawing_no && "Drawing " + s.drawing_no, s.sheet_no && "Sheet " + s.sheet_no, s.revision && "Rev " + s.revision, s.standard_detected, s.drawing_type].filter(Boolean).join(" · "))}<br>Generated ${new Date(r.meta?.createdAt || Date.now()).toLocaleString()} with Schematic Lens. Advisory only: verify against the actual installation.</p>
+<h2>Summary</h2>${esc(r.summary).split(/\n+/).map(p => `<p>${p}</p>`).join("")}
+<h2>How it works</h2>${r.circuits.map(c => `<h3>${esc(c.name)}</h3><p>${esc(c.description)}</p><ol>${arr(c.sequence).map(x => `<li>${esc(x)}</li>`).join("")}</ol>`).join("") || "<p>None.</p>"}
+<h2>Components</h2>${tbl([["tag","Tag"],["type","Device"],["symbol","Symbol"],["function","Function"],["ratings","Ratings"],["location","Location"],["safety_related","Safety"],["confidence","Confidence"]], r.components)}
+<h2>Connections</h2>${tbl([["from","From"],["to","To"],["wire","Wire"],["via","Via"],["signal","Signal"],["confidence","Confidence"]], r.connections)}
+<h2>Safety functions</h2>${tbl([["name","Function"],["input_devices","Input"],["logic","Logic"],["output_devices","Output"],["channels","Channels"],["edm","EDM"],["cross_fault_detection","Cross-fault"],["reset","Reset"],["stop_category","Stop cat."],["suggested_category","Suggested cat."],["likely_pl","Likely PL"],["rationale","Rationale"]], r.safety_functions)}
+<h2>Findings</h2>${tbl([["severity","Severity"],["title","Finding"],["detail","Detail"],["reference","Reference"],["recommendation","Recommendation"],["standard","Standard"],["confidence","Confidence"]], [...r.findings].sort((a, b) => SEV.indexOf(sevKey(a.severity)) - SEV.indexOf(sevKey(b.severity))))}
+${arr(r.sld?.feeders).length ? `<h2>Single-line diagram</h2><p>${esc([r.sld.supply, r.sld.incomer, r.sld.busbar, r.sld.earthing].filter(Boolean).join(" · "))}</p>${tbl([["tag","Tag"],["device","Device"],["rating","Rating"],["cable","Cable"],["load","Load"]], r.sld.feeders)}` : ""}
+<h2>To verify</h2><ul>${r.verify.map(v => `<li>${esc(v)}</li>`).join("")}</ul>
+${r.unreadable.length ? `<h2>Could not read reliably</h2><ul>${r.unreadable.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : ""}
+</body></html>`;
+}
+
+/* ---------- Saved reports (shared db, kept across devices) ---------- */
+let histDocs = [];
+function startHistory(){
+  if (!db) { $("#hist").innerHTML = '<p class="empty">Saved reports need claude.ai. Reports still work; they just aren\'t kept.</p>'; return; }
+  db.collection("reports").orderBy("createdAt", "desc").limit(60).onSnapshot(snap => {
+    histDocs = snap.docs; renderHistory(histDocs);
+  }, () => { $("#hist").innerHTML = '<p class="empty">Saved reports are unavailable right now.</p>'; });
+}
+function renderHistory(docs){
+  const el = $("#hist");
+  if (!db) { el.innerHTML = '<p class="empty">Saved reports appear here when the page runs on claude.ai.</p>'; return; }
+  if (!docs.length) { el.innerHTML = '<p class="empty">Each drawing you read is saved here automatically, on phone and desktop.</p>'; return; }
+  el.innerHTML = docs.map(d => { const x = d.data(); return `
+    <div class="hitem" data-id="${esc(d.id)}">
+      ${x.thumb ? `<img src="${esc(x.thumb)}" alt="">` : '<div class="ph"></div>'}
+      <div style="min-width:0"><div class="t" title="${esc(x.title)}">${esc(x.title)}</div><div class="d">${new Date(x.createdAt).toLocaleDateString(undefined, {day:"numeric", month:"short", year:"numeric"})} · ${esc(x.findings || 0)} findings</div></div>
+      <div class="acts"><button class="btn small" data-h="open" type="button">Open</button><button class="btn small danger" data-h="del" type="button">Delete</button></div>
+    </div>`; }).join("");
+}
+$("#hist").addEventListener("click", async e => {
+  const b = e.target.closest("[data-h]"); if (!b || !db) return;
+  const id = b.closest(".hitem").dataset.id, d = histDocs.find(x => x.id === id); if (!d) return;
+  if (b.dataset.h === "open") {
+    const x = d.data();
+    state.report = normalize(JSON.parse(JSON.stringify(x.report)));
+    state.report.meta = x.report.meta; state.report.note = x.report.note;
+    state.isExample = false; state.imgSets = []; state.chat = []; state.tab = "overview";
+    renderReport();
+    if (window.innerWidth < 980) $("#report").scrollIntoView({behavior: "smooth", block: "start"});
+  }
+  if (b.dataset.h === "del") {
+    if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Confirm"; setTimeout(() => { if (b.isConnected) { b.dataset.armed = ""; b.textContent = "Delete"; } }, 4000); return; }
+    b.disabled = true;
+    try { await db.doc("reports/" + id).delete(); } catch { showErr("Couldn't delete that report. Try again."); b.disabled = false; }
+  }
+});
+async function saveHistory(rep, sheet){
+  if (!db) return;
+  const doc = {title: rep.sheet?.title || rep.meta?.sheets?.[0] || "Drawing", createdAt: rep.meta?.createdAt || Date.now(),
+    findings: rep.findings.length, thumb: sheet ? thumbOf(sheet.canvas, 120, .6) : "", report: rep};
+  if (JSON.stringify(doc).length > 250000) { doc.report = {...rep, connections: rep.connections.slice(0, 60)}; doc.report.note = (rep.note ? rep.note + " " : "") + "Saved copy keeps the first 60 connections."; }
+  if (JSON.stringify(doc).length > 250000) { showErr("This report is too large to save. Download it as Excel or JSON instead."); return; }
+  try { await db.collection("reports").add(doc); }
+  catch (e) { showErr(e?.code === "quota_exceeded" ? "Saved reports are full. Delete some old ones." : "Couldn't save this report to your history."); }
+}
+
+renderSheets();
+renderReport();
+</script>
