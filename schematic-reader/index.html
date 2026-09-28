@@ -1,38 +1,39 @@
-<title>Schematic Lens</title>
+<title>Ravi's Machine Safety – Electrical &amp; Control Circuit App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
+/* Tesseract palette: graphite + safety amber, drafting-grid ground */
 :root{
-  --paper:#eef1ec; --surface:#ffffff; --surface-2:#f6f8f5; --ink:#16222c; --muted:#56636e; --line:#d3d9d2;
-  --accent:#f2b705; --accent-ink:#16222c; --wire:#1b5cb3; --wire-soft:#e3ecf8;
-  --crit:#c42b2b; --major:#c9620a; --minor:#9a7a00; --ok:#2c7a4b; --info:#56636e;
+  --paper:#f3f4f1; --grid:rgba(16,22,28,.05); --surface:#ffffff; --surface-2:#f7f8f6; --ink:#10161c; --muted:#56606a; --line:#d6dad5;
+  --accent:#f5b301; --accent-ink:#10161c; --accent-text:#8f6300; --wire:#1f5fae; --wire-soft:#e4ecf7;
+  --crit:#c42b2b; --major:#c05f0a; --minor:#8f7200; --ok:#2c7a4b; --info:#56606a;
   --crit-bg:#fbe9e7; --major-bg:#fdf0e3; --minor-bg:#fbf5dc; --ok-bg:#e6f3eb; --info-bg:#eceff1;
-  --shadow:0 1px 2px rgba(22,34,44,.06),0 4px 16px rgba(22,34,44,.06);
-  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --shadow:0 1px 2px rgba(16,22,28,.06),0 4px 16px rgba(16,22,28,.06);
+  --f-display:"Sora","Segoe UI",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --paper:#0e1419; --surface:#161f27; --surface-2:#1b262f; --ink:#e4eae6; --muted:#98a6b0; --line:#2b3843;
-    --accent:#f2b705; --accent-ink:#11181e; --wire:#78adff; --wire-soft:#1d2d44;
-    --crit:#ff7a72; --major:#ffa25a; --minor:#e3c34d; --ok:#6fcf97; --info:#98a6b0;
-    --crit-bg:#3a1b1b; --major-bg:#3a2715; --minor-bg:#332e14; --ok-bg:#16301f; --info-bg:#222c33;
-    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+    --paper:#0c1014; --grid:rgba(245,179,1,.05); --surface:#131920; --surface-2:#1a212a; --ink:#e8ecef; --muted:#8e9aa5; --line:#27313b;
+    --accent:#f5b301; --accent-ink:#0c1014; --accent-text:#f5b301; --wire:#7fb0ff; --wire-soft:#1b2a40;
+    --crit:#ff7a72; --major:#ffa25a; --minor:#e3c34d; --ok:#6fcf97; --info:#8e9aa5;
+    --crit-bg:#3a1b1b; --major-bg:#3a2715; --minor-bg:#332e14; --ok-bg:#16301f; --info-bg:#1f2830;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 16px rgba(0,0,0,.3);
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --paper:#0e1419; --surface:#161f27; --surface-2:#1b262f; --ink:#e4eae6; --muted:#98a6b0; --line:#2b3843;
-  --accent:#f2b705; --accent-ink:#11181e; --wire:#78adff; --wire-soft:#1d2d44;
-  --crit:#ff7a72; --major:#ffa25a; --minor:#e3c34d; --ok:#6fcf97; --info:#98a6b0;
-  --crit-bg:#3a1b1b; --major-bg:#3a2715; --minor-bg:#332e14; --ok-bg:#16301f; --info-bg:#222c33;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+  --paper:#0c1014; --grid:rgba(245,179,1,.05); --surface:#131920; --surface-2:#1a212a; --ink:#e8ecef; --muted:#8e9aa5; --line:#27313b;
+  --accent:#f5b301; --accent-ink:#0c1014; --accent-text:#f5b301; --wire:#7fb0ff; --wire-soft:#1b2a40;
+  --crit:#ff7a72; --major:#ffa25a; --minor:#e3c34d; --ok:#6fcf97; --info:#8e9aa5;
+  --crit-bg:#3a1b1b; --major-bg:#3a2715; --minor-bg:#332e14; --ok-bg:#16301f; --info-bg:#1f2830;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 16px rgba(0,0,0,.3);
 }
 *{box-sizing:border-box}
-body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--f-body);padding-inline:16px;padding-block:0 48px}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;color:var(--ink);font:15px/1.55 var(--f-body);padding-inline:16px;padding-block:0 48px}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--wire);outline-offset:2px}
 .wrap{max-width:1180px;margin:0 auto}
@@ -40,12 +41,18 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* Title block header */
 .hazard{height:6px;background:repeating-linear-gradient(-45deg,var(--accent) 0 10px,#16222c 10px 20px);margin-inline:-16px}
-header.tb{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:end;padding-block:18px 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
-.tb h1{font:700 34px/1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0}
-.tb h1 span{color:var(--muted);font-weight:600}
-.tb .std{font:500 12px/1.4 var(--f-mono);color:var(--muted);text-align:right}
-.tb p{grid-column:1/-1;margin:2px 0 0;color:var(--muted);max-width:70ch}
-@media (max-width:560px){header.tb{grid-template-columns:1fr}.tb .std{text-align:left}}
+header.tb{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center;padding-block:18px 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.logo{width:44px;height:44px;border-radius:8px;background:var(--accent);display:grid;place-items:center}
+.logo svg{width:26px;height:26px}
+.tb h1{font:700 24px/1.15 var(--f-display);letter-spacing:-.01em;margin:0;text-wrap:balance}
+.tb h1 span{display:block;font:500 14px/1.3 var(--f-display);color:var(--accent-text);letter-spacing:.02em;margin-top:2px}
+.tb .right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.tb .std{font:500 11.5px/1.4 var(--f-mono);color:var(--muted);text-align:right}
+.tb p{grid-column:1/-1;margin:6px 0 0;color:var(--muted);max-width:70ch}
+.theme{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--surface)}
+.theme button{border:0;background:none;border-radius:999px;padding:4px 10px;font-size:12.5px;cursor:pointer;color:var(--muted)}
+.theme button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+@media (max-width:640px){header.tb{grid-template-columns:auto 1fr}.tb .right{grid-column:1/-1;flex-direction:row-reverse;justify-content:space-between;align-items:center}.tb .std{text-align:left}}
 
 .layout{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
 @media (min-width:980px){.layout{grid-template-columns:350px minmax(0,1fr);align-items:start}.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
@@ -54,14 +61,14 @@ header.tb{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:e
 .side{display:flex;flex-direction:column;gap:16px}
 .step{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
 .step b{font:700 13px/1 var(--f-mono);background:var(--accent);color:var(--accent-ink);padding:4px 6px;border-radius:3px}
-.step h2{font:700 20px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0}
+.step h2{font:600 16px/1.2 var(--f-display);margin:0}
 .hint{color:var(--muted);font-size:13px;margin:8px 0 0}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:500;min-height:40px}
 .btn:hover{border-color:var(--wire)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:600}
-.btn.go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font:700 18px/1 var(--f-display);text-transform:uppercase;letter-spacing:.04em;width:100%;min-height:48px}
+.btn.go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font:700 15px/1 var(--f-display);letter-spacing:.02em;width:100%;min-height:48px}
 .btn.small{padding:5px 10px;min-height:32px;font-size:13px}
 .btn.danger{color:var(--crit)}
 .row{display:flex;flex-wrap:wrap;gap:8px}
@@ -82,7 +89,7 @@ header.tb{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:e
 .field>label,.field>.lbl{font:600 11px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
 .seg button{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:8px 10px;resize:vertical}
 select{border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:6px 8px}
 
@@ -97,7 +104,7 @@ select{border:1px solid var(--line);border-radius:8px;background:var(--surface-2
 .report{display:flex;flex-direction:column;gap:16px;min-width:0}
 .rhead{display:grid;gap:10px}
 .ex-tag{display:inline-block;font:700 12px/1 var(--f-mono);letter-spacing:.06em;background:var(--accent);color:var(--accent-ink);padding:5px 8px;border-radius:3px;width:max-content}
-.rhead h2{font:700 28px/1.1 var(--f-display);margin:0;text-wrap:balance}
+.rhead h2{font:700 22px/1.2 var(--f-display);margin:0;text-wrap:balance}
 .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .meta div{padding:8px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
 .meta dt{font:600 10.5px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
@@ -118,7 +125,7 @@ select{border:1px solid var(--line);border-radius:8px;background:var(--surface-2
 .sbadge{font:700 10px/1 var(--f-mono);background:var(--accent);color:var(--accent-ink);padding:2px 4px;border-radius:3px;margin-left:6px;vertical-align:2px}
 
 .tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
-.tabs button{border:0;background:none;padding:10px 14px;cursor:pointer;font:600 16px/1 var(--f-display);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button{border:0;background:none;padding:11px 12px;cursor:pointer;font:600 13px/1 var(--f-display);color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .tabs .c{font:500 11px var(--f-mono);margin-left:4px;color:var(--muted)}
 .tabpanel{padding-top:14px}
@@ -135,7 +142,7 @@ td .sub{color:var(--muted);font-size:12.5px}
 .filter label{font-size:13px;display:flex;gap:6px;align-items:center}
 
 .disclaimer{font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:8px 12px;margin-bottom:14px}
-h3.sec{font:700 18px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.04em;margin:18px 0 10px}
+h3.sec{font:600 15px/1.2 var(--f-display);margin:20px 0 10px}
 h3.sec:first-child{margin-top:0}
 .sf-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
 .sf{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
@@ -193,15 +200,60 @@ ul.plain{margin:0;padding-left:18px;font-size:13.5px}
 .hitem .acts{display:flex;gap:4px}
 .exports{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .empty{color:var(--muted);font-size:13.5px}
+
+/* Learn mode */
+.explain{border:1px solid var(--accent);border-radius:10px;padding:12px 14px;background:var(--surface);margin-bottom:12px;font-size:14px}
+.explain h4{margin:0 0 6px;font:600 14px var(--f-display);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.explain p{margin:0 0 6px}.explain ul,.explain ol{margin:4px 0 6px;padding-left:18px}
+.explain code{font-family:var(--f-mono);font-size:.88em;background:var(--wire-soft);padding:0 3px;border-radius:3px}
+.learn-grid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:760px){.learn-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}}
+.qcard{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.qcard .qn{font:500 11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.qcard .q{font-weight:600;font-size:14.5px}
+.opts-q{display:grid;gap:6px}
+.opts-q button{text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13.5px}
+.opts-q button:disabled{cursor:default}
+.opts-q button.right{border-color:var(--ok);background:var(--ok-bg)}
+.opts-q button.wrong{border-color:var(--crit);background:var(--crit-bg)}
+.qexp{font-size:13px;border-left:3px solid var(--accent);padding-left:10px}
+.quiz{display:flex;flex-direction:column;gap:10px}
+.score{font:700 28px/1 var(--f-display)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.stat b{display:block;font:700 20px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.stat span{font-size:11.5px;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.bars div{display:grid;grid-template-columns:90px 1fr 40px;gap:8px;align-items:center;font-size:12.5px}
+.bars i{display:block;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bars i::after{content:"";display:block;height:100%;width:var(--w);background:var(--accent)}
+.bars em{font-style:normal;font-variant-numeric:tabular-nums;text-align:right;color:var(--muted)}
+.syms{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.sym{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface)}
+.sym h4{margin:0 0 6px;font-size:13.5px}
+.sym .pair{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sym figure{margin:0;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);padding:4px;text-align:center}
+.sym svg{width:100%;height:60px;display:block;color:var(--ink)}
+.sym figcaption{font:500 10.5px var(--f-mono);color:var(--muted)}
+.sym p{margin:6px 0 0;font-size:12px;color:var(--muted)}
+ol.method{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-direction:column;gap:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="hazard" aria-hidden="true"></div>
 <div class="wrap">
   <header class="tb">
-    <h1>Schematic Lens <span>/ circuit reader</span></h1>
-    <div class="std">IEC 60617 · IEC 81346 · NEMA/JIC<br>ISO 13849-1 · IEC 60204-1</div>
-    <p>Upload control, safety or single-line drawings. Claude lists every device against its symbol, traces the connections, explains how the circuit works and reviews the safety functions.</p>
+    <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3h18v5h-6.5v13h-5V8H3z" fill="#10161c"/><path d="M3 3h4L3 7z" fill="#f5b301"/><path d="M21 3h-4l4 4z" fill="#f5b301"/></svg></div>
+    <h1>Ravi's Machine Safety<span>Electrical &amp; Control Circuit App</span></h1>
+    <div class="right">
+      <div class="theme" role="group" aria-label="Colour theme">
+        <button type="button" data-theme-set="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+      </div>
+      <div class="std">IEC 60617 · IEC 81346 · NEMA/JIC<br>ISO 13849-1 · IEC 60204-1</div>
+    </div>
+    <p>Upload control, safety or single-line drawings. Claude lists every device against its symbol, traces the connections, explains how the circuit works, reviews the safety functions, and teaches you to read the drawing yourself.</p>
   </header>
 
   <div id="capBanner" class="banner warn" hidden style="margin-bottom:16px"></div>
@@ -368,9 +420,30 @@ const state = {
   sheets: [], settings: {type:"auto", std:"auto", detail:"standard", depth:"thorough"},
   report: EXAMPLE, isExample: true, tab: "overview",
   imgSets: [], // [{name, blobs, desc}] from the last analysis, reused by chat
-  chat: [], busy: false, ctl: null, filter: "", safetyOnly: false
+  chat: [], busy: false, ctl: null, filter: "", safetyOnly: false,
+  explains: {}, explainTag: null, quiz: null, quizLevel: "beginner", quizCount: 5
 };
 let sample = null, caps = null, db = null, downloads = null;
+let progress = {attempts: []};
+
+/* ---------- Light / dark switch ---------- */
+const root = document.documentElement;
+let hostTheme = root.getAttribute("data-theme"), themeMode = "auto", settingTheme = false;
+function applyTheme(mode){
+  themeMode = mode; settingTheme = true;
+  if (mode === "auto") { if (hostTheme) root.setAttribute("data-theme", hostTheme); else root.removeAttribute("data-theme"); }
+  else root.setAttribute("data-theme", mode);
+  settingTheme = false;
+  document.querySelectorAll("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeSet === mode ? "true" : "false"));
+  try { localStorage.setItem("rms-theme", mode); } catch {}
+}
+new MutationObserver(() => {
+  if (settingTheme) return;
+  hostTheme = root.getAttribute("data-theme");          // the claude.ai viewer changed its theme
+  if (themeMode !== "auto" && hostTheme !== themeMode) applyTheme(themeMode);
+}).observe(root, {attributes: true, attributeFilter: ["data-theme"]});
+document.querySelectorAll("[data-theme-set]").forEach(b => b.onclick = () => applyTheme(b.dataset.themeSet));
+try { const saved = localStorage.getItem("rms-theme"); if (saved === "light" || saved === "dark") applyTheme(saved); } catch {}
 
 /* ---------- Capabilities ---------- */
 (async () => {
@@ -383,7 +456,7 @@ let sample = null, caps = null, db = null, downloads = null;
     if (!caps?.images) showCap("This view can't send images to Claude, so drawings can't be read here. Try the Claude app or claude.ai in Chrome.");
   });
   c.use("downloads").then(d => { downloads = d; renderReport(); });
-  c.use("db").then(d => { db = d; startHistory(); });
+  c.use("db").then(d => { db = d; startHistory(); startProgress(); });
 })();
 function showCap(msg){ const b = $("#capBanner"); b.textContent = msg; b.hidden = false; }
 
@@ -668,6 +741,7 @@ async function analyze(){
 function finish(rep, sets){
   rep.meta = {createdAt: Date.now(), sheets: state.sheets.slice(0, sets.length).map(s => s.name), settings: {...state.settings}};
   state.report = rep; state.isExample = false; state.imgSets = sets; state.chat = []; state.tab = "overview";
+  state.explains = {}; state.explainTag = null; state.quiz = null;
   renderReport();
   saveHistory(rep, state.sheets[0]);
   if (window.innerWidth < 980) $("#report").scrollIntoView({behavior: "smooth", block: "start"});
@@ -690,6 +764,7 @@ function renderReport(){
     ["safety","Safety review",r.findings.length],
     ["sld","SLD",""],
     ["verify","To verify",r.verify.length + r.unreadable.length],
+    ["learn","Learn",""],
     ["chat","Ask",""]
   ];
   if (!(r.sld && (r.sld.present === true || arr(r.sld.feeders).length))) tabs.splice(4, 1);
@@ -725,6 +800,12 @@ $("#report").addEventListener("click", e => {
   if (t) { state.tab = t.dataset.tab; $("#report").querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b === t)); renderTab(); return; }
   const x = e.target.closest("[data-export]"); if (x) doExport(x.dataset.export, x);
   const q = e.target.closest("[data-q]"); if (q) { $("#chatIn").value = q.dataset.q; ask(); }
+  const ex = e.target.closest("[data-explain]"); if (ex) explainDevice(Number(ex.dataset.explain));
+  if (e.target.closest("#closeExplain")) { state.explainTag = null; $("#explainBox").hidden = true; }
+  const lv = e.target.closest("[data-qlevel]"); if (lv) { state.quizLevel = lv.dataset.qlevel; lv.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === lv ? "true" : "false")); }
+  const qc = e.target.closest("[data-qcount]"); if (qc) { state.quizCount = Number(qc.dataset.qcount); qc.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === qc ? "true" : "false")); }
+  if (e.target.closest("#quizBtn")) startQuiz();
+  const pick = e.target.closest("[data-pick]"); if (pick) pickAnswer(pick.dataset.pick);
 });
 function exportsHtml(){
   if (!downloads) return "";
@@ -738,6 +819,7 @@ function renderTab(){
   if (state.tab === "safety") p.innerHTML = safetyHtml(r);
   if (state.tab === "sld") p.innerHTML = sldHtml(r.sld);
   if (state.tab === "verify") p.innerHTML = verifyHtml(r);
+  if (state.tab === "learn") { p.innerHTML = learnHtml(); renderQuiz(); renderProgress(); }
   if (state.tab === "chat") { p.innerHTML = chatHtml(); bindChat(); }
 }
 function overviewHtml(r){
@@ -750,7 +832,9 @@ function overviewHtml(r){
     ${r.cross_references.length ? `<h3 class="sec">Cross-references</h3><div class="tbl-wrap"><table><thead><tr><th>Ref</th><th>Meaning</th></tr></thead><tbody>${r.cross_references.map(x => `<tr><td class="tag">${esc(x.ref)}</td><td>${esc(x.meaning)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
 }
 function componentsHtml(){
-  return `<div class="filter"><input type="search" id="cFilter" placeholder="Filter by tag, type or function" value="${esc(state.filter)}" aria-label="Filter components">
+  return `<div class="explain" id="explainBox" ${state.explainTag ? "" : "hidden"}>${state.explainTag ? explainInner(state.explainTag, state.explains[state.explainTag] || "") : ""}</div>
+    <p class="hint" style="margin:0 0 10px">Learning a device? Tap <b>Explain</b> for its symbol, terminals and role in this circuit.</p>
+    <div class="filter"><input type="search" id="cFilter" placeholder="Filter by tag, type or function" value="${esc(state.filter)}" aria-label="Filter components">
     <label><input type="checkbox" id="cSafe" ${state.safetyOnly ? "checked" : ""}> Safety-related only</label></div>
     <div id="cTable"></div>`;
 }
@@ -758,9 +842,10 @@ function bindFilter(){
   const draw = () => {
     const q = state.filter.toLowerCase(), multi = state.report.components.some(c => c.sheet);
     const rows = state.report.components.filter(c => (!state.safetyOnly || c.safety_related === true || c.safety_related === "true") && (!q || JSON.stringify(c).toLowerCase().includes(q)));
-    $("#cTable").innerHTML = rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tag</th><th>Device</th><th>Function in circuit</th><th>Ratings</th><th>Location</th>${multi ? "<th>Sheet</th>" : ""}<th>Confidence</th></tr></thead><tbody>
+    const all = state.report.components;
+    $("#cTable").innerHTML = rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tag</th><th>Device</th><th>Function in circuit</th><th>Ratings</th><th>Location</th>${multi ? "<th>Sheet</th>" : ""}<th>Confidence</th><th>Learn</th></tr></thead><tbody>
       ${rows.map(c => `<tr><td class="tag">${esc(c.tag)}${c.safety_related === true || c.safety_related === "true" ? '<span class="sbadge" title="Safety-related">S</span>' : ""}</td>
-        <td>${esc(c.type)}${c.symbol ? `<div class="sub">${esc(c.symbol)}</div>` : ""}</td><td>${esc(c.function)}</td><td>${esc(c.ratings)}</td><td class="mono">${esc(c.location)}</td>${multi ? `<td class="mono">${esc(c.sheet)}</td>` : ""}<td>${conf(c.confidence)}</td></tr>`).join("")}
+        <td>${esc(c.type)}${c.symbol ? `<div class="sub">${esc(c.symbol)}</div>` : ""}</td><td>${esc(c.function)}</td><td>${esc(c.ratings)}</td><td class="mono">${esc(c.location)}</td>${multi ? `<td class="mono">${esc(c.sheet)}</td>` : ""}<td>${conf(c.confidence)}</td><td><button class="btn small" type="button" data-explain="${all.indexOf(c)}">Explain</button></td></tr>`).join("")}
       </tbody></table></div>` : '<p class="empty">No components match.</p>';
   };
   $("#cFilter").oninput = e => { state.filter = e.target.value; draw(); };
@@ -812,6 +897,229 @@ function verifyHtml(r){
     ${r.verify.length ? `<ul class="checklist">${r.verify.map((v, i) => `<li><label><input type="checkbox" id="v${i}"> <span>${esc(v)}</span></label></li>`).join("")}</ul>` : '<p class="empty">Nothing listed.</p>'}
     <h3 class="sec">Could not read reliably</h3>
     ${r.unreadable.length ? `<ul class="plain">${r.unreadable.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : '<p class="empty">Nothing flagged.</p>'}`;
+}
+
+/* ---------- Learn mode ---------- */
+function explainInner(tag, text){
+  return `<h4><span>Learning <span class="mono" style="color:var(--wire)">${esc(tag)}</span></span><button class="btn small" id="closeExplain" type="button">Close</button></h4><div id="explainText">${text ? md(text) : "Thinking…"}</div>`;
+}
+async function explainDevice(i){
+  const c = state.report.components[i]; if (!c) return;
+  const tag = str(c.tag) || "device";
+  state.explainTag = tag;
+  const box = $("#explainBox"); box.hidden = false; box.innerHTML = explainInner(tag, state.explains[tag] || "");
+  box.scrollIntoView({behavior: "smooth", block: "nearest"});
+  if (state.explains[tag]) return;
+  if (!sample) { $("#explainText").textContent = "Open this page on claude.ai while signed in to get explanations."; return; }
+  const related = state.report.connections.filter(x => str(x.from).includes(tag) || str(x.to).includes(tag)).slice(0, 15);
+  const prompt = `You are teaching a machine safety consultant (ANSI B11 certified, strong in sales, still learning to read electrical drawings) to read schematics. Explain one device from their drawing.
+
+Device: ${JSON.stringify(c)}
+Its connections: ${JSON.stringify(related)}
+Drawing summary: ${str(state.report.summary).slice(0, 1500)}
+Drawing standard: ${str(state.report.sheet?.standard_detected) || "unknown"}
+
+Cover, in short bullets under these bold headings:
+**What it is**: device type, and what its tag letters mean (IEC 81346 and the NEMA/JIC equivalent).
+**How to spot the symbol**: what the symbol looks like in IEC and in NEMA/JIC drawings.
+**Terminal numbers**: what each terminal number on this device means.
+**Its job here**: its role in this circuit, using the connections.
+**If it fails**: what happens if it fails open, fails shorted or welds, and whether that is dangerous.
+**Safety note**: relevance to ISO 13849 / IEC 60204-1, only if relevant.
+End with one "Try this" line: a small thing to look for on the drawing to practise.
+Stay under 230 words. Say so when the drawing data is not enough to be sure.`;
+  try {
+    const {text} = await sample(prompt, {modelTier: "default", cache: {gcTime: 86400000},
+      onText: ({text}) => { if (state.explainTag === tag && $("#explainText")) $("#explainText").innerHTML = md(text); }});
+    state.explains[tag] = text;
+  } catch (e) {
+    if (state.explainTag === tag && $("#explainText")) $("#explainText").textContent = errMsg(e);
+  }
+}
+
+const TOPICS = {symbols: "Symbols", terminals: "Terminal numbers", codes: "Letter codes", operation: "Circuit operation", safety: "Safety functions", standards: "Standards"};
+function learnHtml(){
+  return `<div class="learn-grid">
+    <section>
+      <h3 class="sec" style="margin-top:0">Quiz yourself on this drawing</h3>
+      <div class="field"><span class="lbl">Level</span><div class="seg">
+        ${[["beginner","Beginner"],["intermediate","Intermediate"],["advanced","Advanced"]].map(([v, l]) => `<button type="button" data-qlevel="${v}" aria-pressed="${state.quizLevel === v}">${l}</button>`).join("")}
+      </div></div>
+      <div class="field"><span class="lbl">Questions</span><div class="seg">
+        ${[5, 10].map(n => `<button type="button" data-qcount="${n}" aria-pressed="${state.quizCount === n}">${n}</button>`).join("")}
+      </div></div>
+      <button class="btn primary" id="quizBtn" type="button">${state.quiz?.items ? "New quiz" : "Start quiz"}</button>
+      <div id="quizArea" class="quiz" style="margin-top:12px"></div>
+    </section>
+    <section>
+      <h3 class="sec" style="margin-top:0">Your progress</h3>
+      <div id="progressBox"></div>
+      <h3 class="sec">How to study a drawing</h3>
+      <ol class="method">
+        <li>Read the title block and legend first: standard, sheet numbering, the maker's own symbols.</li>
+        <li>Find the supply rails, then follow power from the main switch to each load.</li>
+        <li>Spend 10 minutes writing your own device list and E-stop path before opening the report.</li>
+        <li>Compare with the Components and Safety review tabs. Every difference is a lesson.</li>
+        <li>Tap Explain on devices you didn't recognise, then take the quiz.</li>
+      </ol>
+    </section>
+  </div>
+  <h3 class="sec">Symbol guide: IEC vs NEMA / JIC</h3>
+  <p class="hint" style="margin:-4px 0 10px">Simplified sketches of common forms. Makers vary, so always check the drawing's own legend sheet.</p>
+  <div class="syms">${SYMBOLS.map(s => `<div class="sym"><h4>${esc(s.name)}</h4><div class="pair">
+    <figure>${svg(s.iec)}<figcaption>IEC</figcaption></figure><figure>${svg(s.nema)}<figcaption>NEMA / JIC</figcaption></figure></div><p>${esc(s.note)}</p></div>`).join("")}</div>
+  <h3 class="sec">Terminal numbers</h3>
+  <div class="tbl-wrap"><table><thead><tr><th>Marking</th><th>Meaning</th></tr></thead><tbody>
+    ${TERMINALS.map(([k, v]) => `<tr><td class="tag">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</tbody></table></div>
+  <h3 class="sec">Device letter codes</h3>
+  <div class="tbl-wrap"><table><thead><tr><th>Device</th><th>IEC 81346 (old / new)</th><th>NEMA / JIC</th></tr></thead><tbody>
+    ${CODES.map(([d, i, n]) => `<tr><td>${esc(d)}</td><td class="tag">${esc(i)}</td><td class="tag">${esc(n)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+const svg = inner => `<svg viewBox="0 0 80 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+const T = (x, y, s, size = 11) => `<text x="${x}" y="${y}" fill="currentColor" stroke="none" font-size="${size}" font-family="IBM Plex Mono, monospace" text-anchor="middle">${s}</text>`;
+const SYMBOLS = [
+  {name: "Normally open (NO) contact", note: "Open at rest, closes when operated. IEC terminals x3-x4 (e.g. 13-14).",
+    iec: `<path d="M40 4V20M40 40V56M40 40L29 21"/>`, nema: `<path d="M4 30H32M48 30H76M32 17V43M48 17V43"/>`},
+  {name: "Normally closed (NC) contact", note: "Closed at rest, opens when operated. IEC terminals x1-x2 (e.g. 21-22).",
+    iec: `<path d="M40 4V20H50M40 40V56M40 40L53 17"/>`, nema: `<path d="M4 30H32M48 30H76M32 17V43M48 17V43M25 45L55 15"/>`},
+  {name: "Relay / contactor coil", note: "IEC coil terminals A1 (+) and A2 (-). NEMA labels the circle CR, M or TR.",
+    iec: `<path d="M40 4V18M40 42V56"/><rect x="28" y="18" width="24" height="24"/>`, nema: `<path d="M4 30H28M52 30H76"/><circle cx="40" cy="30" r="12"/>${T(40, 34, "CR", 10)}`},
+  {name: "Push button, NO (start)", note: "Spring return. Dashed line = mechanical link to the actuator.",
+    iec: `<path d="M44 4V20M44 40V56M44 40L33 21"/><path d="M38 31H18" stroke-dasharray="3 3"/><path d="M12 24H18V38H12"/>`, nema: `<path d="M4 38H27M53 38H76"/><circle cx="30" cy="38" r="3"/><circle cx="50" cy="38" r="3"/><path d="M26 30H54M40 30V14M34 14H46"/>`},
+  {name: "Emergency stop (NC, latching)", note: "Mushroom head, NC contacts with positive (direct) opening. Terminals often 11-12, 21-22.",
+    iec: `<path d="M46 4V20H56M46 40V56M46 40L59 17"/><path d="M50 29H22" stroke-dasharray="3 3"/><path d="M22 20A9 9 0 0 0 22 38Z"/>`, nema: `<path d="M4 26H27M53 26H76"/><circle cx="30" cy="26" r="3"/><circle cx="50" cy="26" r="3"/><path d="M26 34H54M40 34V12M29 12A11 8 0 0 1 51 12Z"/>`},
+  {name: "Circuit breaker", note: "IEC: switch with × at the fixed contact. NEMA: arc between the terminals.",
+    iec: `<path d="M40 4V20M40 40V56M40 40L29 21M35 15L45 25M45 15L35 25"/>`, nema: `<path d="M4 34H25M55 34H76"/><circle cx="28" cy="34" r="3"/><circle cx="52" cy="34" r="3"/><path d="M28 29Q40 12 52 29"/>`},
+  {name: "Fuse", note: "IEC tag F / FA; NEMA tag FU. Both commonly drawn as a box with the line through it.",
+    iec: `<path d="M40 4V56"/><rect x="33" y="14" width="14" height="32"/>`, nema: `<path d="M4 30H76"/><rect x="26" y="23" width="28" height="14"/>`},
+  {name: "Motor (3-phase)", note: "IEC M 3~ with U V W (or U1 V1 W1). NEMA leads T1 T2 T3.",
+    iec: `<path d="M30 4V16M40 4V16M50 4V16"/><circle cx="40" cy="36" r="17"/>${T(40, 36, "M", 13)}${T(40, 48, "3~", 10)}`, nema: `<path d="M4 18H24M4 30H23M4 42H24"/><circle cx="42" cy="30" r="17"/>${T(42, 34, "MTR", 10)}`},
+  {name: "Indicator lamp", note: "IEC: circle with a cross, tag P/PF (old H). NEMA: circle with rays, letter = colour (R, G, A).",
+    iec: `<path d="M40 4V20M40 40V56"/><circle cx="40" cy="30" r="10"/><path d="M33 23L47 37M47 23L33 37"/>`, nema: `<path d="M4 30H30M50 30H76"/><circle cx="40" cy="30" r="10"/><path d="M40 14V10M40 46V50M29 19L26 16M51 19L54 16"/>${T(40, 34, "R", 10)}`},
+  {name: "Transformer", note: "Control transformers step 415 V down to 230/110/24 V. Check the VA rating.",
+    iec: `<path d="M40 4V12M40 48V56"/><circle cx="40" cy="23" r="11"/><circle cx="40" cy="37" r="11"/>`, nema: `<path d="M22 6V14A5 5 0 0 1 22 24A5 5 0 0 1 22 34A5 5 0 0 1 22 44V54M58 6V14A5 5 0 0 0 58 24A5 5 0 0 0 58 34A5 5 0 0 0 58 44V54M37 12V48M43 12V48"/>`}
+];
+const TERMINALS = [
+  ["13-14, 23-24, 33-34", "NO auxiliary contacts (first digit = position, 3-4 = NO)"],
+  ["11-12, 21-22, 31-32", "NC auxiliary contacts (1-2 = NC)"],
+  ["15-16 / 17-18", "Timed contacts: delayed NC / delayed NO"],
+  ["A1 / A2", "Coil supply (A1 positive or line, A2 negative or neutral)"],
+  ["1-2, 3-4, 5-6 (L1-T1, L2-T2, L3-T3)", "Main power poles of a contactor or breaker"],
+  ["95-96 / 97-98", "Overload relay: NC trip contact / NO signal contact"],
+  ["S11-S12, S21-S22", "Safety relay input channels 1 and 2"],
+  ["S33-S34 (or S34-S35)", "Safety relay reset input"],
+  ["Y1-Y2", "Safety relay feedback loop (EDM): NC mirror contacts of the output contactors"],
+  ["OSSD1 / OSSD2", "Light curtain or safety sensor solid-state safety outputs"],
+  ["41-42", "Safety relay auxiliary NC: signalling only, not a safety output"],
+  ["PE / N / L1 L2 L3", "Protective earth, neutral, phases"]
+];
+const CODES = [
+  ["Circuit breaker, contactor, motor starter", "Q / QA", "CB, M"],
+  ["Main switch / disconnector", "Q / QB", "DISC"],
+  ["Relay, safety relay, timer, PLC", "K / KF", "CR, SR, TR"],
+  ["Push button, selector, E-stop", "S / SF", "PB, SS, E-STOP"],
+  ["Limit, interlock or proximity switch", "B / BG", "LS, PRS"],
+  ["Fuse, MCB, overload", "F / FA, FC", "FU, OL"],
+  ["Motor", "M / MA", "MTR, M"],
+  ["Transformer, power supply", "T / TA, G", "XFMR, PS"],
+  ["Indicator lamp, beacon", "H / PF", "PL, LT"],
+  ["Solenoid valve coil", "Y / MB", "SOL"],
+  ["Terminal strip", "X / XD", "TB"]
+];
+
+async function startQuiz(){
+  if (!sample) { showErr("Open this page on claude.ai while signed in to take quizzes."); return; }
+  if (state.quiz?.loading) return;
+  const r = {...state.report}; delete r.meta;
+  let data = JSON.stringify(r); if (data.length > 30000) data = data.slice(0, 30000) + "…(truncated)";
+  const n = state.quizCount, lvl = state.quizLevel;
+  const weak = weakTopics().slice(0, 2).map(t => TOPICS[t] || t);
+  state.quiz = {loading: true}; renderQuiz();
+  const prompt = `Write a ${n}-question multiple-choice quiz that teaches a machine safety consultant to read electrical drawings. Base the questions on the drawing analysis below: use its real tags, terminals and circuits wherever you can, plus general knowledge of IEC 60617 / IEC 81346, NEMA / JIC, IEC 60204-1 and ISO 13849-1.
+Level: ${lvl}. Beginner = symbols, letter codes, NO/NC and terminal numbers. Intermediate = circuit operation and sequences. Advanced = safety function assessment: channels, EDM, cross-fault detection, categories, failure modes.
+Mix topics: symbols, terminals, codes, operation, safety, standards.${weak.length ? ` Include extra questions on the learner's weak areas: ${weak.join(", ")}.` : ""}
+Each question has 4 options with exactly one correct answer. Vary the position of the correct answer.
+
+Drawing analysis (JSON):
+${data}
+
+Reply with only a JSON array of ${n} objects:
+[{"q": "question", "options": ["A", "B", "C", "D"], "answer": 0, "explain": "why the answer is right, 1-3 sentences", "topic": "symbols | terminals | codes | operation | safety | standards"}]`;
+  try {
+    const items = await sample.json(prompt, {modelTier: "default", cache: false});
+    const list = arr(items).filter(q => q && typeof q.q === "string" && Array.isArray(q.options) && q.options.length >= 2).slice(0, n).map(q => {
+      const options = q.options.slice(0, 4).map(str);
+      const answer = Math.min(options.length - 1, Math.max(0, Math.round(Number(q.answer)) || 0));
+      const topic = str(q.topic).toLowerCase().trim();
+      return {q: str(q.q), options, answer, explain: str(q.explain), topic: TOPICS[topic] ? topic : "operation"};
+    });
+    if (!list.length) throw {code: "invalid_json"};
+    state.quiz = {items: list, picks: {}, level: lvl, saved: false};
+  } catch (e) {
+    state.quiz = null;
+    if (e?.code !== "cancelled") showErr(errMsg(e));
+  }
+  if (state.tab === "learn") renderTab();
+}
+function renderQuiz(){
+  const el = $("#quizArea"); if (!el) return;
+  const q = state.quiz;
+  if (!q) { el.innerHTML = `<p class="empty">${state.isExample ? "You can practise on the example report now, or read your own drawing first." : "Questions are written from this drawing, using its real tags and terminals."}</p>`; return; }
+  if (q.loading) { el.innerHTML = '<div class="progress">Writing your quiz… this takes about 20–60 seconds.</div>'; return; }
+  const answered = Object.keys(q.picks).length, right = q.items.filter((it, i) => q.picks[i] === it.answer).length;
+  el.innerHTML = q.items.map((it, i) => {
+    const picked = q.picks[i], done = picked !== undefined;
+    return `<div class="qcard"><span class="qn">Question ${i+1} of ${q.items.length} · ${esc(TOPICS[it.topic])}</span><div class="q">${esc(it.q)}</div>
+      <div class="opts-q">${it.options.map((o, j) => `<button type="button" data-pick="${i}:${j}" ${done ? "disabled" : ""} class="${done && j === it.answer ? "right" : done && j === picked ? "wrong" : ""}">${String.fromCharCode(65 + j)}. ${esc(o)}</button>`).join("")}</div>
+      ${done ? `<div class="qexp"><b>${picked === it.answer ? "Correct." : "Not quite."}</b> ${esc(it.explain)}</div>` : ""}</div>`;
+  }).join("") + (answered === q.items.length ? `<div class="qcard"><span class="qn">Result</span><div class="score">${right} / ${q.items.length}</div><div class="empty">${right === q.items.length ? "Full marks. Try the next level." : "Review the explanations above, then take a new quiz."}${db ? " Saved to your progress." : ""}</div></div>` : "");
+}
+function pickAnswer(v){
+  const q = state.quiz; if (!q?.items) return;
+  const [i, j] = v.split(":").map(Number);
+  if (q.picks[i] !== undefined) return;
+  q.picks[i] = j;
+  renderQuiz();
+  if (Object.keys(q.picks).length === q.items.length && !q.saved) { q.saved = true; saveProgress(q); }
+}
+async function saveProgress(q){
+  const topics = {};
+  q.items.forEach((it, i) => { const t = topics[it.topic] || (topics[it.topic] = [0, 0]); t[1]++; if (q.picks[i] === it.answer) t[0]++; });
+  const entry = {at: Date.now(), score: q.items.filter((it, i) => q.picks[i] === it.answer).length, total: q.items.length, level: q.level, title: str(state.report.sheet?.title).slice(0, 120), topics};
+  progress = {attempts: [...arr(progress.attempts), entry].slice(-200)};
+  renderProgress();
+  if (!db) return;
+  try { await db.doc("learn/progress").set({attempts: progress.attempts}); }
+  catch { showErr("Couldn't save your quiz score. It will show until you close the page."); }
+}
+function startProgress(){
+  if (!db) return;
+  db.doc("learn/progress").onSnapshot(s => {
+    const d = s.exists ? s.data() : null;
+    progress = {attempts: arr(d?.attempts).map(a => ({...a}))};
+    renderProgress();
+  }, () => {});
+}
+function weakTopics(){
+  const t = {};
+  for (const a of arr(progress.attempts)) for (const [k, v] of Object.entries(a.topics || {})) { const x = t[k] || (t[k] = [0, 0]); x[0] += Number(v[0]) || 0; x[1] += Number(v[1]) || 0; }
+  return Object.entries(t).filter(([, v]) => v[1] >= 2).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]).map(([k]) => k);
+}
+function renderProgress(){
+  const el = $("#progressBox"); if (!el) return;
+  const at = arr(progress.attempts);
+  if (!at.length) { el.innerHTML = `<p class="empty">No quizzes yet. Your scores ${db ? "are saved here and sync between phone and desktop" : "show here"}.</p>`; return; }
+  const tot = at.reduce((s, a) => s + (Number(a.total) || 0), 0), ok = at.reduce((s, a) => s + (Number(a.score) || 0), 0);
+  const week = at.filter(a => Date.now() - a.at < 7 * 864e5).length;
+  const t = {};
+  for (const a of at) for (const [k, v] of Object.entries(a.topics || {})) { const x = t[k] || (t[k] = [0, 0]); x[0] += Number(v[0]) || 0; x[1] += Number(v[1]) || 0; }
+  const rows = Object.entries(t).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]);
+  el.innerHTML = `<div class="stats">
+      <div class="stat"><b>${at.length}</b><span>quizzes taken</span></div>
+      <div class="stat"><b>${tot ? Math.round(ok / tot * 100) : 0}%</b><span>correct overall</span></div>
+      <div class="stat"><b>${week}</b><span>this week</span></div></div>
+    <div class="bars">${rows.map(([k, v]) => { const p = Math.round(v[0] / v[1] * 100); return `<div><span>${esc(TOPICS[k] || k)}</span><i style="--w:${p}%"></i><em>${p}%</em></div>`; }).join("")}</div>
+    ${rows.length ? `<p class="hint">Weakest first. New quizzes add extra questions on your two weakest topics.</p>` : ""}`;
 }
 
 /* ---------- Chat ---------- */
@@ -920,7 +1228,7 @@ function reportDoc(){
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(s.title || "Schematic report")}</title>
 <style>body{font:14px/1.5 Arial,sans-serif;color:#16222c;max-width:1000px;margin:24px auto;padding:0 16px}h1{margin:0 0 4px}h2{border-bottom:3px solid #f2b705;padding-bottom:4px;margin-top:28px}table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{border:1px solid #cfd6d0;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eef1ec}.d{color:#56636e;font-size:12px}</style></head><body>
 <h1>${esc(s.title || "Schematic report")}</h1>
-<p class="d">${esc([s.drawing_no && "Drawing " + s.drawing_no, s.sheet_no && "Sheet " + s.sheet_no, s.revision && "Rev " + s.revision, s.standard_detected, s.drawing_type].filter(Boolean).join(" · "))}<br>Generated ${new Date(r.meta?.createdAt || Date.now()).toLocaleString()} with Schematic Lens. Advisory only: verify against the actual installation.</p>
+<p class="d">${esc([s.drawing_no && "Drawing " + s.drawing_no, s.sheet_no && "Sheet " + s.sheet_no, s.revision && "Rev " + s.revision, s.standard_detected, s.drawing_type].filter(Boolean).join(" · "))}<br>Generated ${new Date(r.meta?.createdAt || Date.now()).toLocaleString()} with Ravi's Machine Safety – Electrical &amp; Control Circuit App. Advisory only: verify against the actual installation.</p>
 <h2>Summary</h2>${esc(r.summary).split(/\n+/).map(p => `<p>${p}</p>`).join("")}
 <h2>How it works</h2>${r.circuits.map(c => `<h3>${esc(c.name)}</h3><p>${esc(c.description)}</p><ol>${arr(c.sequence).map(x => `<li>${esc(x)}</li>`).join("")}</ol>`).join("") || "<p>None.</p>"}
 <h2>Components</h2>${tbl([["tag","Tag"],["type","Device"],["symbol","Symbol"],["function","Function"],["ratings","Ratings"],["location","Location"],["safety_related","Safety"],["confidence","Confidence"]], r.components)}
@@ -960,6 +1268,7 @@ $("#hist").addEventListener("click", async e => {
     state.report = normalize(JSON.parse(JSON.stringify(x.report)));
     state.report.meta = x.report.meta; state.report.note = x.report.note;
     state.isExample = false; state.imgSets = []; state.chat = []; state.tab = "overview";
+    state.explains = {}; state.explainTag = null; state.quiz = null;
     renderReport();
     if (window.innerWidth < 980) $("#report").scrollIntoView({behavior: "smooth", block: "start"});
   }

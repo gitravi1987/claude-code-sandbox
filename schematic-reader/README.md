@@ -1,6 +1,12 @@
-# Schematic Lens
+# Ravi's Machine Safety – Electrical & Control Circuit App
 
-A single-page web app that reads electrical drawings: IEC and NEMA/JIC control circuits, safety circuits, PLC I/O and single-line diagrams. It is built for machine safety consultants.
+A single-page web app that reads electrical drawings: IEC and NEMA/JIC control circuits, safety circuits, PLC I/O and single-line diagrams. It is built for machine safety consultants and styled in Tesseract colours (graphite with safety amber, Sora headings). It has a light/dark switch.
+
+## Learn mode
+
+- **Explain** on any component: Claude teaches that device, covering its symbol in IEC and NEMA, its terminal numbers, its role in this circuit and its failure modes.
+- **Quiz**: 5 or 10 multiple-choice questions written from the current drawing, at Beginner, Intermediate or Advanced level. Scores are saved to `learn/progress`, and new quizzes focus on your weakest topics.
+- **Symbol guide**: IEC vs NEMA/JIC sketches, plus tables of terminal numbers and letter codes.
 
 Live app (private to the owner): https://claude.ai/artifact/8TxERiN6qyXeTycq4aUcoM
 
