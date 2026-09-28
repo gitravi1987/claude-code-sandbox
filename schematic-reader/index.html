@@ -240,6 +240,8 @@ ul.plain{margin:0;padding-left:18px;font-size:13.5px}
 .sym svg{width:100%;height:60px;display:block;color:var(--ink)}
 .sym figcaption{font:500 10.5px var(--f-mono);color:var(--muted)}
 .sym p{margin:6px 0 0;font-size:12px;color:var(--muted)}
+.bridge{margin-top:10px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--accent);border-radius:10px;padding:12px}
+.bridge textarea{min-height:90px;font:12.5px/1.4 var(--f-mono)}
 ol.method{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-direction:column;gap:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -315,6 +317,18 @@ ol.method{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-directio
         <div class="row" style="margin-top:8px"><button class="btn small" id="stopBtn" type="button" hidden>Stop</button></div>
         <div id="progress" class="progress" hidden></div>
         <div id="err" class="banner err" hidden style="margin-top:10px"></div>
+        <button class="btn small" id="bridgeBtn" type="button" style="margin-top:10px;width:100%">Read via Claude chat (no image upload needed here)</button>
+        <div id="bridge" class="bridge" hidden>
+          <ol class="method">
+            <li>Tap <b>Copy instructions</b>.</li>
+            <li>Open a <b>new chat</b> on claude.ai (or the Claude app), attach your drawing photo(s) or PDF, paste, and send.</li>
+            <li>When Claude finishes, copy its <b>whole reply</b>, paste it in the box below and tap <b>Load report</b>.</li>
+          </ol>
+          <div class="row"><button class="btn primary small" id="copyPrompt" type="button">Copy instructions</button><span id="copyMsg" class="empty"></span></div>
+          <textarea id="promptOut" readonly hidden aria-label="Instructions to copy"></textarea>
+          <textarea id="pasteIn" placeholder="Paste Claude's reply here" aria-label="Claude's reply"></textarea>
+          <button class="btn go" id="loadReport" type="button">Load report</button>
+        </div>
       </section>
 
       <section class="panel" aria-labelledby="s3">
@@ -474,7 +488,7 @@ async function checkImages(){
   try { lim = await sample.limits(); } catch { failed = true; }
   caps = lim;
   imageState = lim?.images ? "yes" : failed ? "unknown" : "no";
-  if (imageState === "no") showCap("This screen can't send drawings to Claude (Learn mode, quizzes and saved reports still work). Open the link in Chrome on claude.ai, signed in, to read drawings.", true);
+  if (imageState === "no") showCap("claude.ai reports that this page can't send pictures to Claude on your account yet. Use \"Read via Claude chat\" under Settings to read drawings. Learn, Ask, quizzes and saved reports work normally.", true);
   if (imageState === "unknown") showCap("Couldn't confirm that this screen can send drawings to Claude. You can still try Read drawings, or check again.", true);
 }
 
@@ -693,7 +707,7 @@ const ERR = {
   sampling_disabled: "Claude isn't available for this account.",
   rate_limited: "You've reached your Claude usage limit or sent requests too quickly. Wait a few minutes, then try again.",
   session_expired: "Your claude.ai session expired. Sign in again, then retry.",
-  images_unavailable: "This screen can't send drawings to Claude. Open the link in Chrome on claude.ai, signed in with your Claude account.",
+  images_unavailable: "claude.ai doesn't let this page send pictures to Claude on your account yet. Use \"Read via Claude chat\" below instead.",
   image_rejected: "Claude couldn't accept one of the images. Try a JPG or PNG photo.",
   invalid_json: "The answer came back incomplete, usually because the sheet is very dense. Try again, choose Fast, or crop the photo to half the sheet.",
   prompt_too_large: "Too much text for one request. Remove some sheets and try again.",
@@ -706,7 +720,6 @@ const errMsg = e => ERR[e?.code] || (e?.message ? `Something went wrong: ${e.mes
 async function analyze(){
   hideErr();
   if (!sample) { showErr("Open this page on claude.ai while signed in to read drawings."); return; }
-  if (imageState === "no") { showErr(ERR.images_unavailable); return; }
   if (!state.sheets.length) { showErr("Add at least one drawing first."); return; }
   state.busy = true; state.ctl = new AbortController();
   $("#goBtn").disabled = true; $("#stopBtn").hidden = false;
@@ -748,6 +761,8 @@ async function analyze(){
       finish(per.length === 1 ? per[0] : mergeReports(per), sets.slice(0, per.length));
       state.report.note = `Stopped after ${per.length} of ${n} sheets. ${e?.code === "cancelled" ? "" : errMsg(e)}`;
       renderReport();
+    } else if (e?.code === "images_unavailable") {
+      imageState = "no"; showErr(ERR.images_unavailable); openBridge();
     } else if (e?.code !== "cancelled") showErr(errMsg(e));
   } finally {
     state.busy = false; setProgress(null);
@@ -762,6 +777,50 @@ function finish(rep, sets){
   saveHistory(rep, state.sheets[0]);
   if (window.innerWidth < 980) $("#report").scrollIntoView({behavior: "smooth", block: "start"});
 }
+
+/* ---------- Read via Claude chat (for views that can't send images) ---------- */
+function bridgePrompt(){
+  const s = state.settings, ctx = $("#ctx").value.trim();
+  return `You are an expert electrical controls engineer helping an ANSI B11 certified machine safety consultant study a drawing set. Read the attached drawing sheet(s) and return a structured analysis as JSON.
+
+${TYPE_TXT[s.type]} ${STD_TXT[s.std]}
+${ctx ? "Consultant's context: " + ctx.slice(0, 1500) + "\n" : ""}
+If several sheets or PDF pages are attached, treat them as one drawing set: follow cross-references between sheets, join each safety function end to end, and put the sheet number in each "location".
+Photos may be rotated 90°, skewed, or show other pages and the desk around the sheet. Read text in whichever direction it runs and ignore anything outside the drawing border (the title block belongs to the drawing). Zoom into small text before reading it.
+
+${KNOWLEDGE}
+
+${RULES}
+
+Return exactly this JSON shape in one code block (fill every field; use empty strings or empty arrays where nothing applies):
+${SCHEMA}`;
+}
+function openBridge(){ const b = $("#bridge"); b.hidden = false; b.scrollIntoView({behavior: "smooth", block: "nearest"}); }
+$("#bridgeBtn").onclick = () => { const b = $("#bridge"); b.hidden = !b.hidden; };
+$("#copyPrompt").onclick = async () => {
+  const text = bridgePrompt(), out = $("#promptOut"), msg = $("#copyMsg");
+  try { await navigator.clipboard.writeText(text); msg.textContent = "Copied. Now paste it in a new Claude chat with your drawing."; out.hidden = true; }
+  catch { out.value = text; out.hidden = false; out.focus(); out.select(); msg.textContent = "Copy the selected text below (Ctrl+C or long-press → Copy)."; }
+};
+function parseLoose(t){
+  t = String(t || "").trim();
+  try { return JSON.parse(t); } catch {}
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) { try { return JSON.parse(fence[1]); } catch {} }
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
+  return null;
+}
+$("#loadReport").onclick = () => {
+  hideErr();
+  const obj = parseLoose($("#pasteIn").value);
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) { showErr("Couldn't find the report in that text. Copy Claude's whole reply, including the code block, and paste it again."); return; }
+  const rep = normalize(obj);
+  if (!rep.components.length && !rep.summary) { showErr("That reply has no components or summary. Check you pasted the reply to the copied instructions."); return; }
+  rep.note = "Read through Claude chat. Ask and Learn work from this report; they can't see the drawing itself.";
+  finish(rep, []);
+  $("#pasteIn").value = ""; $("#bridge").hidden = true;
+};
 
 /* ---------- Report rendering ---------- */
 function conf(c){ const k = confKey(c); return `<span class="conf ${k}">${k}</span>`; }
