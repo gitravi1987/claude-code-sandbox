@@ -1,0 +1,1616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f5b301">
+<meta name="robots" content="noindex">
+<title>Ravi's Machine Safety – Electrical &amp; Control Circuit App</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23f5b301'/%3E%3Cpath d='M4 4h16v4.5h-6v12h-4v-12H4z' fill='%2310161c'/%3E%3C/svg%3E">
+<style>html{color-scheme:light;-webkit-text-size-adjust:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Tesseract palette: graphite + safety amber, drafting-grid ground */
+:root{
+  --paper:#f3f4f1; --grid:rgba(16,22,28,.05); --surface:#ffffff; --surface-2:#f7f8f6; --ink:#10161c; --muted:#56606a; --line:#d6dad5;
+  --accent:#f5b301; --accent-ink:#10161c; --accent-text:#8f6300; --wire:#1f5fae; --wire-soft:#e4ecf7;
+  --crit:#c42b2b; --major:#c05f0a; --minor:#8f7200; --ok:#2c7a4b; --info:#56606a;
+  --crit-bg:#fbe9e7; --major-bg:#fdf0e3; --minor-bg:#fbf5dc; --ok-bg:#e6f3eb; --info-bg:#eceff1;
+  --shadow:0 1px 2px rgba(16,22,28,.06),0 4px 16px rgba(16,22,28,.06);
+  --f-display:"Sora","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0c1014; --grid:rgba(245,179,1,.05); --surface:#131920; --surface-2:#1a212a; --ink:#e8ecef; --muted:#8e9aa5; --line:#27313b;
+    --accent:#f5b301; --accent-ink:#0c1014; --accent-text:#f5b301; --wire:#7fb0ff; --wire-soft:#1b2a40;
+    --crit:#ff7a72; --major:#ffa25a; --minor:#e3c34d; --ok:#6fcf97; --info:#8e9aa5;
+    --crit-bg:#3a1b1b; --major-bg:#3a2715; --minor-bg:#332e14; --ok-bg:#16301f; --info-bg:#1f2830;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 16px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0c1014; --grid:rgba(245,179,1,.05); --surface:#131920; --surface-2:#1a212a; --ink:#e8ecef; --muted:#8e9aa5; --line:#27313b;
+  --accent:#f5b301; --accent-ink:#0c1014; --accent-text:#f5b301; --wire:#7fb0ff; --wire-soft:#1b2a40;
+  --crit:#ff7a72; --major:#ffa25a; --minor:#e3c34d; --ok:#6fcf97; --info:#8e9aa5;
+  --crit-bg:#3a1b1b; --major-bg:#3a2715; --minor-bg:#332e14; --ok-bg:#16301f; --info-bg:#1f2830;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 16px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;color:var(--ink);font:15px/1.55 var(--f-body);padding-inline:16px;padding-block:0 48px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--wire);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto}
+.mono{font-family:var(--f-mono);font-size:.9em}
+
+/* Title block header */
+.hazard{height:6px;background:repeating-linear-gradient(-45deg,var(--accent) 0 10px,#16222c 10px 20px);margin-inline:-16px}
+header.tb{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center;padding-block:18px 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.logo{width:44px;height:44px;border-radius:8px;background:var(--accent);display:grid;place-items:center}
+.logo svg{width:26px;height:26px}
+.tb h1{font:700 24px/1.15 var(--f-display);letter-spacing:-.01em;margin:0;text-wrap:balance}
+.tb h1 span{display:block;font:500 14px/1.3 var(--f-display);color:var(--accent-text);letter-spacing:.02em;margin-top:2px}
+.tb .right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.tb .std{font:500 11.5px/1.4 var(--f-mono);color:var(--muted);text-align:right}
+.tb p{grid-column:1/-1;margin:6px 0 0;color:var(--muted);max-width:70ch}
+.theme{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--surface)}
+.theme button{border:0;background:none;border-radius:999px;padding:4px 10px;font-size:12.5px;cursor:pointer;color:var(--muted)}
+.theme button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+@media (max-width:640px){header.tb{grid-template-columns:auto 1fr}.tb .right{grid-column:1/-1;flex-direction:row-reverse;justify-content:space-between;align-items:center}.tb .std{text-align:left}}
+
+.layout{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:980px){.layout{grid-template-columns:350px minmax(0,1fr);align-items:start}.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:var(--shadow)}
+.side{display:flex;flex-direction:column;gap:16px}
+.step{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
+.step b{font:700 13px/1 var(--f-mono);background:var(--accent);color:var(--accent-ink);padding:4px 6px;border-radius:3px}
+.step h2{font:600 16px/1.2 var(--f-display);margin:0}
+.hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:500;min-height:40px}
+.btn:hover{border-color:var(--wire)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:600}
+.btn.go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font:700 15px/1 var(--f-display);letter-spacing:.02em;width:100%;min-height:48px}
+.btn.small{padding:5px 10px;min-height:32px;font-size:13px}
+.btn.danger{color:var(--crit)}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:stretch;transition:border-color .15s}
+.drop.over{border-color:var(--wire);background:var(--wire-soft)}
+.drop .row .btn{flex:1}
+/* The real file input covers the whole button, so the tap lands on it directly (works in app web views) */
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.filebtn:focus-within{outline:2px solid var(--wire);outline-offset:2px}
+.sheets{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.sheet{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
+.sheet img{width:56px;height:40px;object-fit:cover;border-radius:4px;background:#fff;border:1px solid var(--line)}
+.sheet .nm{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet .dm{font:500 11px var(--f-mono);color:var(--muted)}
+.sheet .acts{display:flex;gap:4px}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;width:32px;height:32px;cursor:pointer;display:grid;place-items:center}
+.icon-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field>label,.field>.lbl{font:600 11px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:8px 10px;resize:vertical}
+select{border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:6px 8px}
+
+.progress{margin-top:12px;font-size:13px;border-left:3px solid var(--accent);padding:6px 10px;background:var(--surface-2);border-radius:0 6px 6px 0}
+.progress .t{font:500 12px var(--f-mono);color:var(--muted)}
+.banner{border-radius:8px;padding:10px 12px;font-size:13.5px;border:1px solid var(--line)}
+.banner.warn{background:var(--major-bg);border-color:transparent}
+.banner.err{background:var(--crit-bg);border-color:transparent}
+.banner.info{background:var(--wire-soft);border-color:transparent}
+
+/* Report */
+.report{display:flex;flex-direction:column;gap:16px;min-width:0}
+.rhead{display:grid;gap:10px}
+.ex-tag{display:inline-block;font:700 12px/1 var(--f-mono);letter-spacing:.06em;background:var(--accent);color:var(--accent-ink);padding:5px 8px;border-radius:3px;width:max-content}
+.rhead h2{font:700 22px/1.2 var(--f-display);margin:0;text-wrap:balance}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.meta div{padding:8px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.meta dt{font:600 10.5px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+.meta dd{margin:0;font-weight:500;font-size:14px}
+.summary{max-width:75ch;margin:0}
+.counts{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.crit{background:var(--crit-bg);color:var(--crit)}
+.pill.major{background:var(--major-bg);color:var(--major)}
+.pill.minor{background:var(--minor-bg);color:var(--minor)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.n{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+.conf{font:500 11px var(--f-mono);padding:2px 6px;border-radius:4px;white-space:nowrap}
+.conf.high{background:var(--ok-bg);color:var(--ok)}
+.conf.medium{background:var(--minor-bg);color:var(--minor)}
+.conf.low{background:var(--crit-bg);color:var(--crit)}
+.sbadge{font:700 10px/1 var(--f-mono);background:var(--accent);color:var(--accent-ink);padding:2px 4px;border-radius:3px;margin-left:6px;vertical-align:2px}
+
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.tabs button{border:0;background:none;padding:11px 12px;cursor:pointer;font:600 13px/1 var(--f-display);color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .c{font:500 11px var(--f-mono);margin-left:4px;color:var(--muted)}
+.tabpanel{padding-top:14px}
+
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font:600 11px/1.2 var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.tag{font-family:var(--f-mono);font-weight:500;white-space:nowrap;color:var(--wire)}
+td .sub{color:var(--muted);font-size:12.5px}
+.filter{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.filter input[type=search]{flex:1;min-width:160px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:7px 10px}
+.filter label{font-size:13px;display:flex;gap:6px;align-items:center}
+
+.disclaimer{font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:8px 12px;margin-bottom:14px}
+h3.sec{font:600 15px/1.2 var(--f-display);margin:20px 0 10px}
+h3.sec:first-child{margin-top:0}
+.sf-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.sf{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.sf h4{margin:0;font-size:15px}
+.chain{display:grid;grid-template-columns:1fr;gap:4px;font-size:13px}
+.chain div{display:grid;grid-template-columns:62px 1fr;gap:8px}
+.chain span:first-child{font:600 10.5px/1.7 var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:2px 7px;background:var(--surface-2)}
+.chip b{font-weight:600}
+.catbox{display:flex;gap:8px;align-items:center;font-size:13px}
+.catbox .big{font:700 22px/1 var(--f-display);border:2px solid var(--ink);border-radius:6px;padding:4px 8px}
+.findings{display:flex;flex-direction:column;gap:10px}
+.finding{display:grid;grid-template-columns:6px 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.finding .bar{background:var(--info)}
+.finding.critical .bar{background:var(--crit)} .finding.major .bar{background:var(--major)} .finding.minor .bar{background:var(--minor)}
+.finding .body{padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.finding h4{margin:0;font-size:14.5px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.finding p{margin:0;font-size:13.5px}
+.finding .rec{color:var(--ok)}
+.finding .ref{font:500 12px var(--f-mono);color:var(--muted)}
+
+.circuits{display:flex;flex-direction:column;gap:12px}
+.circuit{border-left:3px solid var(--wire);padding:2px 0 2px 12px}
+.circuit h4{margin:0 0 4px;font-size:15px}
+.circuit ol{margin:6px 0 0;padding-left:20px;font-size:13.5px}
+.circuit p{margin:0;font-size:13.5px}
+ul.plain{margin:0;padding-left:18px;font-size:13.5px}
+.checklist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.checklist label{display:flex;gap:8px;align-items:flex-start;font-size:13.5px}
+
+/* Chat */
+.chat{display:flex;flex-direction:column;gap:10px}
+.msgs{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;padding:4px}
+.msg{max-width:88%;padding:9px 12px;border-radius:10px;font-size:14px}
+.msg.u{align-self:flex-end;background:var(--ink);color:var(--paper);border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:var(--surface-2);border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg.a p{margin:0 0 6px}.msg.a p:last-child{margin:0}
+.msg.a ul,.msg.a ol{margin:4px 0 6px;padding-left:18px}
+.msg code{font-family:var(--f-mono);font-size:.88em;background:var(--wire-soft);padding:0 3px;border-radius:3px}
+.msg.u code{background:transparent}
+.suggest{display:flex;flex-wrap:wrap;gap:6px}
+.suggest button{font-size:12.5px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 10px;cursor:pointer}
+.composer{display:flex;gap:8px;align-items:flex-end}
+.composer textarea{min-height:44px;flex:1}
+.opts{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px;color:var(--muted)}
+.opts label{display:flex;gap:6px;align-items:center}
+
+/* History */
+.hist{display:flex;flex-direction:column;gap:8px}
+.hitem{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--surface-2)}
+.hitem img,.hitem .ph{width:48px;height:36px;object-fit:cover;border-radius:4px;background:var(--line)}
+.hitem .t{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hitem .d{font:500 11px var(--f-mono);color:var(--muted)}
+.hitem .acts{display:flex;gap:4px}
+.exports{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.empty{color:var(--muted);font-size:13.5px}
+
+/* Learn mode */
+.explain{border:1px solid var(--accent);border-radius:10px;padding:12px 14px;background:var(--surface);margin-bottom:12px;font-size:14px}
+.explain h4{margin:0 0 6px;font:600 14px var(--f-display);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.explain p{margin:0 0 6px}.explain ul,.explain ol{margin:4px 0 6px;padding-left:18px}
+.explain code{font-family:var(--f-mono);font-size:.88em;background:var(--wire-soft);padding:0 3px;border-radius:3px}
+.learn-grid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:760px){.learn-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}}
+.qcard{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.qcard .qn{font:500 11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.qcard .q{font-weight:600;font-size:14.5px}
+.opts-q{display:grid;gap:6px}
+.opts-q button{text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13.5px}
+.opts-q button:disabled{cursor:default}
+.opts-q button.right{border-color:var(--ok);background:var(--ok-bg)}
+.opts-q button.wrong{border-color:var(--crit);background:var(--crit-bg)}
+.qexp{font-size:13px;border-left:3px solid var(--accent);padding-left:10px}
+.quiz{display:flex;flex-direction:column;gap:10px}
+.score{font:700 28px/1 var(--f-display)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.stat b{display:block;font:700 20px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.stat span{font-size:11.5px;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.bars div{display:grid;grid-template-columns:90px 1fr 40px;gap:8px;align-items:center;font-size:12.5px}
+.bars i{display:block;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bars i::after{content:"";display:block;height:100%;width:var(--w);background:var(--accent)}
+.bars em{font-style:normal;font-variant-numeric:tabular-nums;text-align:right;color:var(--muted)}
+.syms{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.sym{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface)}
+.sym h4{margin:0 0 6px;font-size:13.5px}
+.sym .pair{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sym figure{margin:0;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);padding:4px;text-align:center}
+.sym svg{width:100%;height:60px;display:block;color:var(--ink)}
+.sym figcaption{font:500 10.5px var(--f-mono);color:var(--muted)}
+.sym p{margin:6px 0 0;font-size:12px;color:var(--muted)}
+.setup>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.setup>summary::-webkit-details-marker{display:none}
+.setup[open]>summary{margin-bottom:12px}
+.setup-body{display:flex;flex-direction:column;gap:4px}
+input[type=text],input[type=password],input[type=search]{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:9px 10px;min-height:40px}
+.setup select{width:100%;min-height:40px;margin-top:6px}
+.setup .row{margin-top:6px}
+.pick{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px;font-weight:600}
+.pick small{font:500 10.5px var(--f-mono);color:var(--muted)}
+.pick:hover{border-color:var(--accent)}
+#picks{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#picks:empty{display:none}
+ol.method{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-direction:column;gap:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="hazard" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="tb">
+    <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3h18v5h-6.5v13h-5V8H3z" fill="#10161c"/><path d="M3 3h4L3 7z" fill="#f5b301"/><path d="M21 3h-4l4 4z" fill="#f5b301"/></svg></div>
+    <h1>Ravi's Machine Safety<span>Electrical &amp; Control Circuit App</span></h1>
+    <div class="right">
+      <div class="theme" role="group" aria-label="Colour theme">
+        <button type="button" data-theme-set="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+      </div>
+      <div class="std">IEC 60617 · IEC 81346 · NEMA/JIC<br>ISO 13849-1 · IEC 60204-1</div>
+    </div>
+    <p>Upload control, safety or single-line drawings. The AI model you choose lists every device against its symbol, traces the connections, explains how the circuit works, reviews the safety functions, and teaches you to read the drawing yourself.</p>
+  </header>
+
+  <div id="capBanner" class="banner warn" hidden style="margin-bottom:16px"></div>
+
+  <div class="layout">
+    <aside class="side">
+      <details class="panel setup" id="setup">
+        <summary><span class="step" style="margin:0"><b>00</b><h2>Setup: AI model</h2></span><span id="setupState" class="pill n">Add key</span></summary>
+        <div class="setup-body">
+          <div class="field">
+            <label for="keyIn">OpenRouter API key</label>
+            <input id="keyIn" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-or-…">
+            <div class="row"><button class="btn primary small" id="keySave" type="button">Save key</button><button class="btn small danger" id="keyForget" type="button">Forget key</button></div>
+            <p class="hint" id="keyMsg" style="margin:0"></p>
+            <p class="hint" style="margin:0">The key stays in this browser only. Never paste it into a chat. Give it a monthly spending limit in OpenRouter (for example $5).</p>
+          </div>
+          <div class="field">
+            <label for="modelId">Model</label>
+            <input id="modelId" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Model ID (or use the list below)">
+            <div class="row"><button class="btn small" id="modelLoad" type="button">Load vision models</button><span id="modelMsg" class="empty"></span></div>
+            <div id="picks"></div>
+            <input id="modelFilter" type="search" placeholder="Filter: gemini, qwen, deepseek…" aria-label="Filter models" style="margin-top:8px" hidden>
+            <select id="modelSel" aria-label="Vision models" hidden></select>
+            <p class="hint" id="modelHint" style="margin:0"></p>
+          </div>
+          <div id="usageInfo" class="hint" style="margin:0"></div>
+        </div>
+      </details>
+
+      <section class="panel" aria-labelledby="s1">
+        <div class="step"><b>01</b><h2 id="s1">Drawings</h2></div>
+        <div class="drop" id="drop">
+          <div class="row">
+            <label class="btn primary filebtn">Add files<input type="file" id="fileIn" accept="image/*,application/pdf,.pdf" multiple></label>
+            <label class="btn filebtn">Take photo<input type="file" id="camIn" accept="image/*" capture="environment"></label>
+          </div>
+          <div class="hint" style="margin:0">JPG, PNG or PDF (each PDF page becomes a sheet). Drop files here on desktop.</div>
+        </div>
+        <div class="sheets" id="sheets"></div>
+        <p class="hint">Photos: shoot square-on in good light and fill the frame with the sheet. Use the rotate button if a sheet is sideways. Photos forwarded through WhatsApp lose detail; upload the original from your gallery or send it as a document.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="s2">
+        <div class="step"><b>02</b><h2 id="s2">Settings</h2></div>
+        <div class="field"><span class="lbl">Drawing type</span>
+          <div class="seg" data-key="type">
+            <button type="button" data-v="auto" aria-pressed="true">Auto-detect</button>
+            <button type="button" data-v="control" aria-pressed="false">Control</button>
+            <button type="button" data-v="safety" aria-pressed="false">Safety</button>
+            <button type="button" data-v="power" aria-pressed="false">Power / SLD</button>
+            <button type="button" data-v="plc" aria-pressed="false">PLC I/O</button>
+          </div>
+        </div>
+        <div class="field"><span class="lbl">Standard</span>
+          <div class="seg" data-key="std">
+            <button type="button" data-v="auto" aria-pressed="true">Auto</button>
+            <button type="button" data-v="iec" aria-pressed="false">IEC</button>
+            <button type="button" data-v="nema" aria-pressed="false">NEMA / JIC</button>
+          </div>
+        </div>
+        <div class="field"><span class="lbl">Zoom detail</span>
+          <div class="seg" data-key="detail">
+            <button type="button" data-v="standard" aria-pressed="true">Standard · 2×2</button>
+            <button type="button" data-v="high" aria-pressed="false">Dense sheet · 3×3</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="ctx">Context (optional)</label>
+          <textarea id="ctx" placeholder="e.g. Hydraulic press, 2 guard doors, check the E-stop and light curtain circuits"></textarea>
+        </div>
+        <button class="btn go" id="goBtn" type="button">Read drawings</button>
+        <div class="row" style="margin-top:8px"><button class="btn small" id="stopBtn" type="button" hidden>Stop</button></div>
+        <div id="progress" class="progress" hidden></div>
+        <div id="err" class="banner err" hidden style="margin-top:10px"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="s3">
+        <div class="step"><b>03</b><h2 id="s3">Saved reports</h2></div>
+        <div id="hist" class="hist"><p class="empty">Loading…</p></div>
+      </section>
+    </aside>
+
+    <main class="panel report" id="report" aria-live="polite"></main>
+  </div>
+</div>
+
+<script>
+/* ---------- Knowledge given to Claude with every drawing ---------- */
+const KNOWLEDGE = `READING CONVENTIONS
+IEC drawings (IEC 60617 symbols, IEC 81346 reference designations, IEC 60204-1):
+- Device tags start with "-" and may carry function/location prefixes (=A1+CP1-K3). Letter codes, old IEC 61346 and new IEC 81346-2:2019: Q/QA = circuit breaker, contactor, motor starter; QB = disconnector / main switch; K/KF = relay, safety relay, PLC module, timer; S/SF = push button, selector, E-stop; B/BG = position / limit / interlock switch, proximity sensor, light curtain; F/FA/FC = fuse, MCB, motor protection, overload relay; M/MA = motor; T/TA/TB = transformer, power supply; G = power supply; H/PF = indicator lamp, beacon; P = meter; X/XD = terminal strip; W = cable; Y/MB = solenoid valve coil; A = assembly / module.
+- Terminal numbers: first digit = contact position, second = function. x1-x2 NC, x3-x4 NO, x5-x6 delayed NC, x7-x8 delayed NO, 95-96 overload NC, 97-98 overload NO. Coil A1/A2. Main poles 1-2, 3-4, 5-6 (L1-T1, L2-T2, L3-T3).
+- Cross references: under a coil, a contact table such as "13-14 /5.3" means sheet 5 column 3. A reference like "/12.4" beside a contact points to its coil.
+- Safety relays: S11/S12 and S21/S22 input channels, S33/S34 (or S34/S35) reset, Y1/Y2 or S33/S34 feedback (EDM) loop, 13-14/23-24/33-34 safety NO outputs, 41-42 auxiliary NC (not a safety output), A1/A2 supply. Safety PLC / light curtains: OSSD1/OSSD2, test pulse outputs T0/T1.
+- Symbols: positive (direct) opening action = arrow in a circle on an NC contact (IEC 60947-5-1 Annex K). E-stop = mushroom head with latching. Mirror contacts (IEC 60947-4-1 Annex F) and mechanically linked contacts (IEC 60947-5-1 Annex L) are marked specially. Solenoid-locking guard switch shows coil plus contacts. Light curtain = emitter/receiver pair with OSSD outputs.
+- Wire colours per IEC 60204-1: black = power, red = AC control, blue = DC control, orange = interlock circuits fed from an external source, green-yellow = PE, light blue = neutral.
+NEMA / JIC / ANSI drawings (NFPA 79, IEEE 315 / ANSI Y32.2, JIC):
+- Ladder (line) diagrams: vertical rails (L1/L2, X1/X2, +24V/0V), rung numbers on the left; numbers on the right list the rungs where that coil's contacts are used, underlined = NC contact.
+- Tags: M = starter / contactor coil, CR = control relay, MCR = master control relay, TR/TD = timer, OL = overload, PB = push button, E-STOP/ES, LS = limit switch, PS = pressure switch, FS = float/flow switch, SS = selector switch, PL/LT = pilot light, SOL = solenoid, CB = circuit breaker, FU = fuse, DISC = disconnect, XFMR/T = transformer, SR = safety relay, VFD = drive.
+- Contacts: NO = two parallel lines; NC = same with a diagonal slash; coils = circles; timed contacts with arrows (TDE/TDD, NOTC/NCTO).
+SINGLE-LINE DIAGRAMS: supply (transformer kVA, voltage, vector group), incomer (ACB/MCCB, rating, poles, trip settings), busbars, metering / CT / PT, outgoing feeders (device, In, Icu/Ics, trip setting), cable sizes (mm² / AWG, cores), loads, earthing system (TN-S, TN-C-S, TT, IT), RCD/ELR, surge protection, generator / ATS, capacitor banks.
+
+SAFETY REVIEW GUIDANCE (advisory; ISO 13849-1, IEC 62061, IEC 60204-1, ISO 13850, ISO 14119, IEC 61496, ISO/TR 24119, ANSI B11.19 / B11.26, NFPA 79)
+For each safety function (E-stop, guard interlock, light curtain, two-hand control, enabling device, safe speed, muting...) trace input device(s) -> logic (safety relay / safety PLC / standard relay / standard PLC) -> output devices (contactors, valves, drive STO).
+Check: number of channels at input, logic and output; feedback / EDM of output contactors (NC mirror contacts in the feedback loop); cross-fault / short-circuit detection (test pulses, channels at different potentials); reset type (automatic, manual, monitored manual) and reset location; stop category 0/1/2 (off-delay outputs, timers); reliance on a standard PLC or standard relays in the safety path; series-connected interlock switches (fault masking, ISO/TR 24119); common-cause weaknesses (both channels via one contact, cable, fuse or single contactor); positive-opening contacts on safety inputs; non-safety devices in the safety path; bypass, jumper, muting or maintenance override; whether the stop removes all hazardous energy (pneumatic / hydraulic valves, drive STO); restart prevention after power loss; lockable main disconnect for LOTO.
+Suggesting an ISO 13849-1 category: B/1 = single channel, no monitoring; 2 = single channel with periodic test; 3 = dual channel, single-fault tolerant, most faults detected (typical safety relay with dual inputs and EDM); 4 = dual channel with cross-fault detection, fault accumulation considered. PL also depends on MTTFd, DCavg and CCF, so never state a PL as certain from a drawing: give the likely range and name the missing data (B10D values, operations per year).`;
+
+const SCHEMA = `{
+ "sheet": {"title": "", "drawing_no": "", "sheet_no": "", "revision": "", "standard_detected": "IEC | NEMA/JIC | Mixed | Unknown", "drawing_type": "control | safety | power | SLD | PLC I/O | mixed", "image_quality": "good | fair | poor", "notes": ""},
+ "summary": "3-6 plain-English sentences: what this sheet is and what it does",
+ "components": [{"tag": "-K1", "type": "Safety relay", "symbol": "what the symbol looks like / symbol standard", "function": "what it does in this circuit", "ratings": "e.g. 24VDC, 3kW, 10A", "location": "sheet/column or rung", "safety_related": true, "confidence": "high | medium | low"}],
+ "connections": [{"from": "-S1:12", "to": "-K1:S12", "wire": "wire no. or colour", "via": "terminal, cable or contact in between", "signal": "e.g. E-stop channel 1", "confidence": "high | medium | low"}],
+ "circuits": [{"name": "e.g. Motor M1 start/stop", "description": "", "sequence": ["step 1", "step 2"]}],
+ "safety_functions": [{"name": "", "input_devices": "", "logic": "", "output_devices": "", "channels": "single | dual | unclear", "edm": "yes | no | unclear", "cross_fault_detection": "yes | no | unclear", "reset": "automatic | manual | monitored manual | unclear", "stop_category": "0 | 1 | 2 | unclear", "suggested_category": "B | 1 | 2 | 3 | 4 | unclear", "likely_pl": "e.g. PLc-PLd | unclear", "rationale": ""}],
+ "findings": [{"severity": "critical | major | minor | info", "title": "", "detail": "", "reference": "tags / terminals / location", "recommendation": "", "standard": "clause if relevant", "confidence": "high | medium | low"}],
+ "sld": {"present": false, "supply": "", "incomer": "", "busbar": "", "earthing": "", "feeders": [{"tag": "", "device": "", "rating": "", "cable": "", "load": ""}], "notes": ""},
+ "cross_references": [{"ref": "/5.3", "meaning": ""}],
+ "unreadable": ["areas or text that could not be read reliably"],
+ "verify": ["specific things the consultant should check on site or in other sheets"]
+}`;
+
+const RULES = `RULES
+- Report only what the drawing shows. Copy tags, terminal numbers and wire numbers exactly. Write "?" for characters you cannot read. Never invent a device.
+- Anything inferred rather than read goes in with confidence "low" (or "medium" if well supported) and the reason in the text.
+- Use the zoomed sections to read small text; use the full view for overall structure and to join wires that cross section edges.
+- Keep each text field short (under about 200 characters). At most 80 components and 120 connections; prioritise safety and control paths over lighting, sockets and similar.
+- Findings are for a machine safety consultant: be specific (tags, terminals), cite the standard clause when you can, and say what to verify. Include positive observations as "info".
+- If this is not an electrical drawing, say so in "summary" and leave the lists empty.
+- Reply with the JSON object only.`;
+
+/* ---------- Example report shown before the first analysis ---------- */
+const EXAMPLE = {
+  sheet:{title:"Example: E-stop and guard door circuit",drawing_no:"EX-001",sheet_no:"4",revision:"B",standard_detected:"IEC",drawing_type:"safety",image_quality:"good",notes:"Example data to show the report layout. Not from your drawings."},
+  summary:"A dual-channel emergency stop (-S1) and a single guard door switch (-B1) feed a safety relay (-K1). The relay's two safety outputs drive contactors -Q1 and -Q2 in series, which switch motor -M1. Contactor NC mirror contacts are wired in the relay's feedback loop, and a reset push button (-S2) restarts the relay.",
+  components:[
+    {tag:"-S1",type:"Emergency stop push button",symbol:"Mushroom head, latching, 2 NC with positive opening",function:"E-stop input, channels 1 and 2",ratings:"",location:"4.2",safety_related:true,confidence:"high"},
+    {tag:"-B1",type:"Guard interlock switch",symbol:"Position switch, 1 NC positive opening",function:"Guard door closed monitoring",ratings:"",location:"4.3",safety_related:true,confidence:"high"},
+    {tag:"-K1",type:"Safety relay",symbol:"Module box, terminals S11-S34, 13-24",function:"Monitors E-stop and guard, drives Q1/Q2",ratings:"24 VDC",location:"4.4",safety_related:true,confidence:"high"},
+    {tag:"-S2",type:"Reset push button",symbol:"Push button, 1 NO",function:"Manual reset in S33-S34",ratings:"",location:"4.5",safety_related:true,confidence:"high"},
+    {tag:"-Q1",type:"Contactor",symbol:"Coil A1/A2, 3 main poles, NC mirror 21-22",function:"Safety output contactor 1",ratings:"AC-3 4 kW",location:"4.6",safety_related:true,confidence:"high"},
+    {tag:"-Q2",type:"Contactor",symbol:"Coil A1/A2, 3 main poles, NC mirror 21-22",function:"Safety output contactor 2",ratings:"AC-3 4 kW",location:"4.7",safety_related:true,confidence:"high"},
+    {tag:"-M1",type:"3-phase motor",symbol:"Circle with M 3~",function:"Hazardous drive",ratings:"3 kW",location:"2.4",safety_related:false,confidence:"medium"}
+  ],
+  connections:[
+    {from:"-S1:12",to:"-K1:S12",wire:"401",via:"-X2:5",signal:"E-stop channel 1",confidence:"high"},
+    {from:"-S1:22",to:"-K1:S22",wire:"403",via:"-X2:7",signal:"E-stop channel 2",confidence:"high"},
+    {from:"-B1:12",to:"-S1:11",wire:"405",via:"",signal:"Guard switch in series with channel 1 only",confidence:"medium"},
+    {from:"-K1:14",to:"-Q1:A1",wire:"410",via:"",signal:"Safety output 1",confidence:"high"},
+    {from:"-K1:24",to:"-Q2:A1",wire:"411",via:"",signal:"Safety output 2",confidence:"high"},
+    {from:"-Q1:22",to:"-Q2:21",wire:"412",via:"",signal:"Feedback loop (EDM) into S33",confidence:"high"}
+  ],
+  circuits:[{name:"Safety relay start-up",description:"How the machine becomes ready to run.",sequence:["E-stop released and guard closed: S11-S12 and S21-S22 closed.","Operator presses -S2; the relay checks that Q1 and Q2 NC contacts are closed.","-K1 outputs 13-14 and 23-24 close; Q1 and Q2 pull in.","Opening the guard or pressing the E-stop drops both outputs immediately (stop category 0)."]}],
+  safety_functions:[
+    {name:"Emergency stop",input_devices:"-S1 (2 NC)",logic:"-K1 safety relay",output_devices:"-Q1, -Q2 in series",channels:"dual",edm:"yes",cross_fault_detection:"unclear",reset:"monitored manual",stop_category:"0",suggested_category:"3",likely_pl:"PLd (data needed)",rationale:"Dual channel input and outputs with EDM. Cross-fault detection depends on relay type."},
+    {name:"Guard door interlock",input_devices:"-B1 (1 NC)",logic:"-K1 safety relay",output_devices:"-Q1, -Q2",channels:"single",edm:"yes",cross_fault_detection:"no",reset:"monitored manual",stop_category:"0",suggested_category:"1",likely_pl:"PLc at most",rationale:"The single guard contact sits in channel 1 only, so one fault can defeat the function."}
+  ],
+  findings:[
+    {severity:"major",title:"Guard switch is single channel",detail:"-B1 has one NC contact in series with E-stop channel 1. A welded contact or a short across -B1 goes undetected.",reference:"-B1:11-12, -K1:S11-S12",recommendation:"Use a 2-NC interlock (or coded/RFID switch) wired to both channels.",standard:"ISO 13849-1 cl. 6.2.6; ISO 14119",confidence:"high"},
+    {severity:"minor",title:"Reset location not shown",detail:"The drawing does not show where -S2 is mounted. It must give a clear view of the danger zone.",reference:"-S2",recommendation:"Confirm on site.",standard:"ISO 13849-1 cl. 5.2.2",confidence:"medium"},
+    {severity:"info",title:"Contactor feedback is monitored",detail:"Q1 and Q2 NC mirror contacts are in series in the feedback loop.",reference:"-Q1:21-22, -Q2:21-22",recommendation:"",standard:"IEC 60947-4-1 Annex F",confidence:"high"}
+  ],
+  sld:{present:false},
+  cross_references:[{ref:"/2.4",meaning:"Q1 main poles on sheet 2 column 4"}],
+  unreadable:[],
+  verify:["Safety relay model (to confirm cross-fault detection and category).","B10D values of -S1, -B1 and contactors, and operations per year, to calculate PL.","Whether hydraulic or pneumatic energy is also removed on E-stop."]
+};
+
+/* ---------- Utilities ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const arr = v => Array.isArray(v) ? v : [];
+const str = v => v == null ? "" : (typeof v === "object" ? JSON.stringify(v) : String(v));
+const SEV = ["critical","major","minor","info"];
+const sevKey = s => { s = String(s||"").toLowerCase(); return SEV.includes(s) ? s : "info"; };
+const confKey = s => { s = String(s||"").toLowerCase(); return ["high","medium","low"].includes(s) ? s : "medium"; };
+const loadScript = src => new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Could not load " + src)); document.head.appendChild(s); });
+
+const state = {
+  sheets: [], settings: {type:"auto", std:"auto", detail:"standard", depth:"thorough"},
+  report: EXAMPLE, isExample: true, tab: "overview",
+  imgSets: [], // [{name, blobs, desc}] from the last analysis, reused by chat
+  chat: [], busy: false, ctl: null, filter: "", safetyOnly: false,
+  explains: {}, explainTag: null, quiz: null, quizLevel: "beginner", quizCount: 5
+};
+let db = null, downloads = null;
+let progress = {attempts: []};
+
+/* ---------- Light / dark switch ---------- */
+const root = document.documentElement;
+let hostTheme = root.getAttribute("data-theme"), themeMode = "auto", settingTheme = false;
+function applyTheme(mode){
+  themeMode = mode; settingTheme = true;
+  if (mode === "auto") { if (hostTheme) root.setAttribute("data-theme", hostTheme); else root.removeAttribute("data-theme"); }
+  else root.setAttribute("data-theme", mode);
+  settingTheme = false;
+  document.querySelectorAll("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeSet === mode ? "true" : "false"));
+  try { localStorage.setItem("rms-theme", mode); } catch {}
+}
+new MutationObserver(() => {
+  if (settingTheme) return;
+  hostTheme = root.getAttribute("data-theme");
+  if (themeMode !== "auto" && hostTheme !== themeMode) applyTheme(themeMode);
+}).observe(root, {attributes: true, attributeFilter: ["data-theme"]});
+document.querySelectorAll("[data-theme-set]").forEach(b => b.onclick = () => applyTheme(b.dataset.themeSet));
+try { const saved = localStorage.getItem("rms-theme"); if (saved === "light" || saved === "dark") applyTheme(saved); } catch {}
+
+/* ---------- OpenRouter connection ---------- */
+const OR_URL = "https://openrouter.ai/api/v1";
+const store = {
+  get(k){ try { return localStorage.getItem(k) || ""; } catch { return ""; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch {} },
+  del(k){ try { localStorage.removeItem(k); } catch {} }
+};
+const getKey = () => store.get("rms-or-key");
+const getModel = () => ($("#modelId")?.value || store.get("rms-or-model")).trim();
+const caps = {images: {maxCount: 10}};
+let visionModels = [];                       // [{id, name, created, pin, pout}] pin/pout = USD per million tokens
+const usageTotal = {tokens: 0, cost: 0, costKnown: false};
+
+const blobToDataUrl = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(b); });
+
+function httpCode(status, msg){
+  msg = String(msg || "");
+  if (status === 401) return "bad_key";
+  if (status === 402) return "no_credits";
+  if (status === 403) return "forbidden";
+  if (status === 429) return "rate_limited";
+  if (status === 408 || status === 504) return "timeout";
+  if (/image|vision|multimodal|modalit/i.test(msg)) return "model_no_images";
+  if (status === 404) return "model_unavailable";
+  if (status === 400 && /context|too (long|large)|token/i.test(msg)) return "too_large";
+  return status >= 500 ? "upstream_error" : "bad_request";
+}
+
+/* Same call shape the rest of the app uses: sample(input, {images, signal, onText}) -> {text, truncated} */
+async function sample(input, opts = {}){
+  const key = getKey(), model = getModel();
+  if (!key) throw {code: "no_key", message: "No API key"};
+  if (!model) throw {code: "no_model", message: "No model chosen"};
+  const turns = typeof input === "string" ? [{role: "user", content: input}] : input;
+  const messages = turns.map(t => ({role: t.role, content: t.content}));
+  const imgs = opts.images ? [].concat(opts.images) : [];
+  if (imgs.length) {
+    const urls = await Promise.all(imgs.map(blobToDataUrl));
+    const last = messages[messages.length - 1];
+    last.content = [{type: "text", text: last.content}, ...urls.map(u => ({type: "image_url", image_url: {url: u}}))];
+  }
+  if (opts.signal?.aborted) throw {code: "cancelled", message: "Cancelled"};
+  const ctl = new AbortController(), onAbort = () => ctl.abort();
+  opts.signal?.addEventListener("abort", onAbort);
+  let text = "", finish = null, usage = null;
+  try {
+    let resp = null, lastErr = null;
+    for (const maxTokens of [16000, 8192]) {
+      try {
+        resp = await fetch(OR_URL + "/chat/completions", {
+          method: "POST", signal: ctl.signal,
+          headers: {"Authorization": "Bearer " + key, "Content-Type": "application/json"},
+          body: JSON.stringify({model, messages, stream: true, max_tokens: maxTokens, temperature: 0.1, usage: {include: true}})
+        });
+      } catch (e) {
+        if (e?.name === "AbortError") throw {code: "cancelled", message: "Cancelled"};
+        throw {code: "network", message: String(e?.message || e)};
+      }
+      if (resp.ok) break;
+      let msg = ""; try { const j = await resp.json(); msg = j?.error?.message || ""; } catch {}
+      lastErr = {code: httpCode(resp.status, msg), message: msg || "HTTP " + resp.status, status: resp.status};
+      if (resp.status === 400 && /max_tokens|max_completion|maximum (output|completion)/i.test(msg)) continue;   // retry once with a smaller limit
+      throw lastErr;
+    }
+    if (!resp?.ok) throw lastErr;
+    if ((resp.headers.get("content-type") || "").includes("application/json")) {
+      const j = await resp.json();
+      if (j.error) throw {code: httpCode(0, j.error.message), message: j.error.message || "Provider error"};
+      text = j.choices?.[0]?.message?.content || ""; finish = j.choices?.[0]?.finish_reason; usage = j.usage;
+      if (text) opts.onText?.({text, delta: text});
+    } else {
+      const reader = resp.body.getReader(), dec = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, {stream: true});
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+          if (!line.startsWith("data:")) continue;           // ": OPENROUTER PROCESSING" keep-alives are comments
+          const payload = line.slice(5).trim();
+          if (!payload || payload === "[DONE]") continue;
+          let j; try { j = JSON.parse(payload); } catch { continue; }
+          if (j.error) throw {code: "upstream_error", message: j.error.message || "Provider error", text};
+          const ch = j.choices?.[0];
+          if (ch?.delta?.content) { text += ch.delta.content; opts.onText?.({text, delta: ch.delta.content}); }
+          if (ch?.finish_reason) finish = ch.finish_reason;
+          if (j.usage) usage = j.usage;
+        }
+      }
+    }
+  } catch (e) {
+    if (e?.name === "AbortError") throw {code: "cancelled", message: "Cancelled", text};
+    if (e && typeof e === "object" && typeof e.code === "string") { if (text && !e.text) e.text = text; throw e; }
+    throw {code: "network", message: String(e?.message || e), text};
+  } finally { opts.signal?.removeEventListener("abort", onAbort); }
+  if (usage) noteUsage(usage, model);
+  if (!text.trim()) throw {code: "empty_completion", message: "Empty reply"};
+  return {text, truncated: finish === "length"};
+}
+sample.lastRepaired = false;
+sample.json = async (input, opts) => {
+  const r = await sample(input, opts);
+  sample.lastRepaired = false;
+  let v = parseJsonLoose(r.text);
+  if (v === undefined) { v = repairTruncated(r.text); if (v !== undefined) sample.lastRepaired = true; }
+  if (v === undefined) throw {code: "invalid_json", message: r.truncated ? "Reply was cut off" : "No JSON found", text: r.text};
+  return v;
+};
+function parseJsonLoose(t){
+  t = String(t || "").trim();
+  try { return JSON.parse(t); } catch {}
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) { try { return JSON.parse(fence[1].trim()); } catch {} }
+  const cands = [["{", "}"], ["[", "]"]].map(([o, c]) => [t.indexOf(o), t.lastIndexOf(c)]).filter(([a, b]) => a >= 0 && b > a).sort((x, y) => x[0] - y[0]);
+  for (const [a, b] of cands) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
+  return undefined;
+}
+// A reply cut off mid-way: keep everything up to the last complete item and close the brackets.
+function repairTruncated(t){
+  t = String(t || "");
+  const s = t.search(/[{[]/); if (s < 0) return undefined;
+  const stack = []; let inStr = false, esc = false, cut = -1, cutStack = null;
+  for (let i = s; i < t.length; i++) {
+    const ch = t[i];
+    if (inStr) { if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false; continue; }
+    if (ch === '"') inStr = true;
+    else if (ch === "{" || ch === "[") stack.push(ch);
+    else if (ch === "}" || ch === "]") { stack.pop(); cut = i; cutStack = stack.slice(); }
+  }
+  if (cut < 0) return undefined;
+  const closers = cutStack.reverse().map(c => c === "{" ? "}" : "]").join("");
+  try { return JSON.parse(t.slice(s, cut + 1) + closers); } catch { return undefined; }
+}
+
+function noteUsage(u, model){
+  const tok = Number(u.total_tokens) || ((Number(u.prompt_tokens) || 0) + (Number(u.completion_tokens) || 0));
+  usageTotal.tokens += tok;
+  let c = Number(u.cost);
+  if (!Number.isFinite(c) || u.cost == null) {
+    const m = visionModels.find(x => x.id === model);
+    c = m ? ((Number(u.prompt_tokens) || 0) * m.pin + (Number(u.completion_tokens) || 0) * m.pout) / 1e6 : NaN;
+  }
+  if (Number.isFinite(c)) { usageTotal.cost += c; usageTotal.costKnown = true; }
+  renderUsage();
+}
+function renderUsage(){
+  const el = $("#usageInfo"); if (!el) return;
+  el.textContent = usageTotal.tokens ? `This visit: ${usageTotal.tokens.toLocaleString()} tokens${usageTotal.costKnown ? " · about $" + usageTotal.cost.toFixed(3) : ""}` : "";
+}
+
+/* ----- Setup panel: key, model list, model picker ----- */
+function fmtPrice(m){ return m.pin === 0 && m.pout === 0 ? "free" : `$${+m.pin.toFixed(2)} in / $${+m.pout.toFixed(2)} out per M tokens`; }
+function updateSetupState(){
+  const hasKey = !!getKey(), hasModel = !!getModel(), pill = $("#setupState");
+  pill.textContent = hasKey && hasModel ? "Ready" : !hasKey ? "Add key" : "Choose model";
+  pill.className = "pill " + (hasKey && hasModel ? "ok" : "major");
+  const cur = visionModels.find(m => m.id === getModel()), hint = $("#modelHint");
+  if (!hasModel) hint.textContent = "Tap Load vision models, then pick one. Compare two or three on the same sheet.";
+  else if (/:free$/.test(getModel()) || (cur && cur.pin === 0 && cur.pout === 0)) hint.textContent = "Free models may keep and reuse your prompts. Avoid them for confidential drawings.";
+  else if (cur) hint.textContent = `${cur.name} · ${fmtPrice(cur)}`;
+  else if (visionModels.length) hint.textContent = "This ID isn't in the vision list, so it may not read images.";
+  else hint.textContent = "";
+}
+async function checkKey(){
+  const msg = $("#keyMsg"), key = getKey();
+  if (!key) { msg.textContent = ""; return; }
+  msg.textContent = "Checking key…";
+  try {
+    const r = await fetch(OR_URL + "/auth/key", {headers: {"Authorization": "Bearer " + key}});
+    if (r.status === 401) { msg.textContent = "OpenRouter rejected this key. Check it and save again."; return; }
+    const d = (await r.json())?.data;
+    if (d && d.limit == null) msg.textContent = "Key works, but it has no spending limit. Set one at openrouter.ai/settings/keys.";
+    else if (d) msg.textContent = `Key works · limit $${Number(d.limit).toFixed(2)}${d.limit_remaining != null ? ` · $${Number(d.limit_remaining).toFixed(2)} left` : ""}`;
+    else msg.textContent = "Key saved.";
+  } catch { msg.textContent = "Key saved."; }
+}
+$("#keySave").onclick = () => {
+  const v = $("#keyIn").value.trim(), msg = $("#keyMsg");
+  if (!v) { msg.textContent = "Paste your key first."; return; }
+  if (!/^sk-or-/.test(v)) { msg.textContent = "That doesn't look like an OpenRouter key. They start with sk-or-."; return; }
+  store.set("rms-or-key", v); $("#keyIn").value = ""; $("#keyIn").placeholder = "Key saved (…" + v.slice(-4) + ")";
+  updateSetupState(); checkKey(); hideErr();
+};
+$("#keyForget").onclick = () => { store.del("rms-or-key"); $("#keyIn").value = ""; $("#keyIn").placeholder = "sk-or-…"; $("#keyMsg").textContent = "Key removed from this browser."; updateSetupState(); };
+$("#modelId").oninput = e => { store.set("rms-or-model", e.target.value.trim()); updateSetupState(); };
+$("#modelLoad").onclick = () => loadModels(true);
+$("#modelFilter").oninput = fillModelSelect;
+$("#modelSel").onchange = e => { if (e.target.value) setModel(e.target.value); };
+function setModel(id){ $("#modelId").value = id; store.set("rms-or-model", id); updateSetupState(); }
+function fillModelSelect(){
+  const q = $("#modelFilter").value.trim().toLowerCase(), sel = $("#modelSel");
+  const rows = visionModels.filter(m => !q || (m.id + " " + m.name).toLowerCase().includes(q)).slice(0, 200);
+  sel.innerHTML = `<option value="">${rows.length} models${q ? " match" : ""}: choose one…</option>` + rows.map(m => `<option value="${esc(m.id)}">${esc(m.id)} · ${esc(fmtPrice(m))}</option>`).join("");
+}
+const FAMILIES = [
+  ["Gemini Flash", m => /^google\/gemini/.test(m.id) && /flash/.test(m.id) && !/lite|image|tts|live|:free/.test(m.id)],
+  ["DeepSeek", m => /^deepseek\//.test(m.id) && !/:free/.test(m.id)],
+  ["Qwen", m => /^qwen\//.test(m.id) && !/:free/.test(m.id)],
+  ["GLM", m => /^z-ai\/glm/.test(m.id) && !/:free/.test(m.id)],
+  ["Claude", m => /^anthropic\/claude/.test(m.id) && /sonnet|haiku/.test(m.id)],
+  ["GPT mini", m => /^openai\/gpt/.test(m.id) && /mini/.test(m.id) && !/image|audio|codex/.test(m.id)]
+];
+function renderModelPicks(){
+  const picks = FAMILIES.map(([name, test]) => [name, visionModels.find(test)]).filter(([, m]) => m);   // list is newest first
+  $("#picks").innerHTML = picks.length ? picks.map(([name, m]) => `<button type="button" class="pick" data-model="${esc(m.id)}" title="${esc(m.id)}">${esc(name)}<small>${esc(fmtPrice(m).replace(" per M tokens", ""))}</small></button>`).join("") : "";
+}
+$("#picks").addEventListener("click", e => { const b = e.target.closest("[data-model]"); if (b) setModel(b.dataset.model); });
+async function loadModels(force){
+  const msg = $("#modelMsg");
+  let list = null;
+  if (!force) { try { const c = JSON.parse(store.get("rms-or-models") || "null"); if (c && Date.now() - c.at < 864e5 && Array.isArray(c.list)) list = c.list; } catch {} }
+  if (!list) {
+    msg.textContent = "Loading…";
+    try {
+      const r = await fetch(OR_URL + "/models");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json();
+      list = arr(j.data).filter(m => arr(m.architecture?.input_modalities).includes("image") && arr(m.architecture?.output_modalities).includes("text"))
+        .map(m => ({id: String(m.id), name: String(m.name || m.id), created: Number(m.created) || 0, pin: (Number(m.pricing?.prompt) || 0) * 1e6, pout: (Number(m.pricing?.completion) || 0) * 1e6}))
+        .sort((a, b) => b.created - a.created);
+      store.set("rms-or-models", JSON.stringify({at: Date.now(), list}));
+    } catch { msg.textContent = "Couldn't load the list. You can still type a model ID above."; return; }
+  }
+  visionModels = list; msg.textContent = `${list.length} vision models`;
+  $("#modelFilter").hidden = false; $("#modelSel").hidden = false;
+  renderModelPicks(); fillModelSelect(); updateSetupState();
+}
+
+/* ----- Saved reports and quiz progress: kept in this browser (IndexedDB) ----- */
+function makeLocalDb(){
+  const mem = new Map(), subs = new Set();
+  let idb = null;
+  const ready = (async () => {
+    try {
+      idb = await new Promise((res, rej) => { const r = indexedDB.open("rms-local", 1); r.onupgradeneeded = () => r.result.createObjectStore("docs"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+      await new Promise((res, rej) => { const rq = idb.transaction("docs").objectStore("docs").openCursor(); rq.onsuccess = () => { const c = rq.result; if (c) { mem.set(c.key, c.value); c.continue(); } else res(); }; rq.onerror = () => rej(rq.error); });
+    } catch { idb = null; }
+  })();
+  const persist = (key, val) => { if (!idb) return; try { const s = idb.transaction("docs", "readwrite").objectStore("docs"); if (val === undefined) s.delete(key); else s.put(val, key); } catch {} };
+  const notify = () => subs.forEach(f => { try { f(); } catch {} });
+  const snap = path => ({id: path.split("/").pop(), exists: mem.has(path), data: () => mem.get(path)});
+  const docRef = path => ({
+    async get(){ await ready; return snap(path); },
+    async set(data){ await ready; const v = JSON.parse(JSON.stringify(data)); mem.set(path, v); persist(path, v); notify(); },
+    async delete(){ await ready; mem.delete(path); persist(path, undefined); notify(); },
+    onSnapshot(next){ const f = () => next(snap(path)); subs.add(f); ready.then(f); return () => subs.delete(f); }
+  });
+  const colRef = (name, order, dir, lim) => ({
+    orderBy: (f, d = "asc") => colRef(name, f, d, lim),
+    limit: n => colRef(name, order, dir, n),
+    onSnapshot(next){
+      const f = () => {
+        let ks = [...mem.keys()].filter(k => k.startsWith(name + "/") && !k.slice(name.length + 1).includes("/"));
+        if (order) ks.sort((a, b) => { const x = mem.get(a)?.[order], y = mem.get(b)?.[order]; return (x > y ? 1 : x < y ? -1 : 0) * (dir === "desc" ? -1 : 1); });
+        if (lim) ks = ks.slice(0, lim);
+        next({docs: ks.map(snap)});
+      };
+      subs.add(f); ready.then(f); return () => subs.delete(f);
+    },
+    async add(data){ const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); await docRef(name + "/" + id).set(data); return docRef(name + "/" + id); }
+  });
+  return {doc: docRef, collection: name => colRef(name)};
+}
+
+/* ----- File saving: a normal download on a real website ----- */
+downloads = {
+  async save({filename, data}){
+    const blob = data instanceof Blob ? data : new Blob([data], {type: /\.json$/i.test(filename) ? "application/json" : "text/html"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+    return {status: "saved"};
+  }
+};
+
+function openSetup(){ const d = $("#setup"); d.open = true; d.scrollIntoView({behavior: "smooth", block: "start"}); }
+function initConnection(){
+  db = makeLocalDb(); startHistory(); startProgress();
+  $("#modelId").value = store.get("rms-or-model");
+  if (getKey()) { $("#keyIn").placeholder = "Key saved (…" + getKey().slice(-4) + ")"; }
+  updateSetupState(); renderUsage();
+  if (!getKey() || !getModel()) $("#setup").open = true;
+  loadModels(false);
+}
+
+function showCap(msg){ const b = $("#capBanner"); b.textContent = msg; b.hidden = false; }
+
+/* ---------- Settings ---------- */
+document.querySelectorAll(".seg").forEach(seg => {
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    state.settings[seg.dataset.key] = b.dataset.v;
+  });
+});
+
+/* ---------- Loading drawings ---------- */
+const fileIn = $("#fileIn"), camIn = $("#camIn"), drop = $("#drop");
+fileIn.onchange = () => { addFiles([...fileIn.files]); fileIn.value = ""; };
+camIn.onchange = () => { addFiles([...camIn.files]); camIn.value = ""; };
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => addFiles([...(e.dataTransfer?.files || [])]));
+
+let pdfjs = null;
+async function loadPdfJs(){
+  if (pdfjs) return pdfjs;
+  const base = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  await loadScript(base + "pdf.min.js");
+  await loadScript(base + "pdf.worker.min.js"); // runs on the page thread (workers from other hosts are blocked)
+  pdfjs = window.pdfjsLib;
+  pdfjs.GlobalWorkerOptions.workerSrc = base + "pdf.worker.min.js";
+  return pdfjs;
+}
+function newCanvas(w, h){ const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0,0,c.width,c.height); return c; }
+
+async function addFiles(files){
+  if (!files.length) return;
+  hideErr();
+  for (const f of files) {
+    try {
+      if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
+        setProgress(`Opening ${f.name}…`);
+        const lib = await loadPdfJs();
+        const doc = await lib.getDocument({data: await f.arrayBuffer()}).promise;
+        const n = Math.min(doc.numPages, 30);
+        for (let p = 1; p <= n; p++) {
+          setProgress(`Rendering ${f.name}, page ${p} of ${n}…`);
+          const page = await doc.getPage(p);
+          const v1 = page.getViewport({scale:1});
+          const scale = Math.min(5, 3600 / Math.max(v1.width, v1.height));
+          const vp = page.getViewport({scale});
+          const c = newCanvas(vp.width, vp.height);
+          await page.render({canvasContext: c.getContext("2d"), viewport: vp}).promise;
+          pushSheet(`${f.name} · p${p}`, c);
+        }
+        if (doc.numPages > 30) showErr(`${f.name} has ${doc.numPages} pages. The first 30 were added; remove the ones you don't need.`);
+      } else {
+        const bmp = await createImageBitmap(f, {imageOrientation:"from-image"}).catch(() => createImageBitmap(f));
+        const k = Math.min(1, 4200 / Math.max(bmp.width, bmp.height));
+        const c = newCanvas(bmp.width * k, bmp.height * k);
+        const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(bmp, 0, 0, c.width, c.height);
+        pushSheet(f.name, c);
+      }
+    } catch (e) {
+      showErr(`Couldn't open ${f.name}. Use JPG, PNG or PDF (iPhone HEIC photos need converting first).`);
+    }
+  }
+  setProgress(null);
+}
+function pushSheet(name, canvas){
+  state.sheets.push({id: Math.random().toString(36).slice(2), name, canvas, thumb: thumbOf(canvas, 160, .7)});
+  renderSheets();
+}
+function thumbOf(c, side, q){ const k = side / Math.max(c.width, c.height); const t = newCanvas(c.width*k, c.height*k); t.getContext("2d").drawImage(c, 0, 0, t.width, t.height); return t.toDataURL("image/jpeg", q); }
+function rotateSheet(s){
+  const c = newCanvas(s.canvas.height, s.canvas.width), x = c.getContext("2d");
+  x.translate(c.width, 0); x.rotate(Math.PI/2); x.drawImage(s.canvas, 0, 0);
+  s.canvas = c; s.thumb = thumbOf(c, 160, .7); renderSheets();
+}
+const ICON_ROT = '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function renderSheets(){
+  const el = $("#sheets");
+  el.innerHTML = state.sheets.map((s, i) => `
+    <div class="sheet" data-id="${s.id}">
+      <img src="${s.thumb}" alt="">
+      <div style="min-width:0"><div class="nm" title="${esc(s.name)}">${i+1}. ${esc(s.name)}</div><div class="dm">${s.canvas.width}×${s.canvas.height}px</div></div>
+      <div class="acts"><button class="icon-btn" data-act="rot" aria-label="Rotate sheet ${i+1}">${ICON_ROT}</button><button class="icon-btn" data-act="del" aria-label="Remove sheet ${i+1}">${ICON_X}</button></div>
+    </div>`).join("");
+}
+$("#sheets").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b || state.busy) return;
+  const id = b.closest(".sheet").dataset.id, s = state.sheets.find(x => x.id === id);
+  if (b.dataset.act === "rot") rotateSheet(s);
+  if (b.dataset.act === "del") { state.sheets = state.sheets.filter(x => x !== s); renderSheets(); }
+});
+
+/* ---------- Image sets: full view + overlapping zoomed sections ---------- */
+function crop(src, sx, sy, sw, sh, maxSide){
+  const k = Math.min(1, maxSide / Math.max(sw, sh));
+  const c = newCanvas(sw*k, sh*k), x = c.getContext("2d");
+  x.imageSmoothingQuality = "high"; x.drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c;
+}
+const toBlob = c => new Promise(r => c.toBlob(r, "image/jpeg", .92));
+async function imageSet(sheet, detail, maxCount){
+  const c = sheet.canvas, W = c.width, H = c.height;
+  let grid = detail === "high" ? [3,3] : [2,2];
+  if (Math.max(W, H) < 1500) grid = [1,1];
+  const options = [[3,3],[3,2],[2,2],[2,1],[1,1]];
+  const fits = g => g[0]*g[1] + (g[0]*g[1] > 1 ? 1 : 0) <= maxCount;
+  if (!fits(grid)) grid = options.find(g => g[0]*g[1] <= grid[0]*grid[1] && fits(g)) || [1,1];
+  let [cols, rows] = grid;
+  if (H > W && cols !== rows) [cols, rows] = [rows, cols];
+  const blobs = [], desc = [];
+  blobs.push(await toBlob(crop(c, 0, 0, W, H, 2000)));
+  desc.push("Image 1: the full sheet.");
+  if (cols * rows > 1) {
+    const ov = 0.1, tw = W / cols, th = H / rows;
+    const rn = rows === 3 ? ["top","middle","bottom"] : rows === 2 ? ["top","bottom"] : [""];
+    const cn = cols === 3 ? ["left","centre","right"] : cols === 2 ? ["left","right"] : [""];
+    for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+      const x0 = Math.max(0, q*tw - tw*ov), y0 = Math.max(0, r*th - th*ov);
+      const x1 = Math.min(W, (q+1)*tw + tw*ov), y1 = Math.min(H, (r+1)*th + th*ov);
+      blobs.push(await toBlob(crop(c, x0, y0, x1-x0, y1-y0, 1600)));
+      desc.push(`Image ${blobs.length}: zoomed ${[rn[r], cn[q]].filter(Boolean).join("-")} section (about 10% overlap with neighbours).`);
+    }
+  }
+  return {name: sheet.name, blobs, desc};
+}
+
+/* ---------- Prompts ---------- */
+const TYPE_TXT = {auto:"Detect the drawing type.", control:"This is a control circuit drawing.", safety:"This is a safety circuit drawing; give the safety review extra depth.", power:"This is a power distribution drawing or single-line diagram; fill the sld section in full.", plc:"This is a PLC I/O drawing; list each I/O point as a component (tag = address) with its field device."};
+const STD_TXT = {auto:"Detect the drawing standard (IEC or NEMA/JIC).", iec:"The drawing follows IEC conventions.", nema:"The drawing follows NEMA / JIC / ANSI ladder conventions."};
+function extractPrompt(i, n, set){
+  const s = state.settings, ctx = $("#ctx").value.trim();
+  return `You are an expert electrical controls engineer helping an ANSI B11 certified machine safety consultant study a drawing set. Read the attached drawing sheet and return a structured analysis as JSON.
+
+This is sheet ${i+1} of ${n} ("${set.name}"). ${TYPE_TXT[s.type]} ${STD_TXT[s.std]}
+${ctx ? "Consultant's context: " + ctx.slice(0, 1500) + "\n" : ""}
+The images are:
+${set.desc.join("\n")}
+Photos may be rotated 90°, skewed, or show other pages and the desk around the sheet. Read text in whichever direction it runs and ignore anything outside the drawing border (the title block belongs to the drawing).
+
+${KNOWLEDGE}
+
+${RULES}
+
+Return exactly this JSON shape (fill every field; use empty strings or empty arrays where nothing applies):
+${SCHEMA}`;
+}
+function synthPrompt(per){
+  const compact = per.map((r, i) => ({sheet_index: i+1, sheet: r.sheet, summary: r.summary,
+    components: r.components.map(c => [c.tag, c.type, c.function, c.location].join(" | ")),
+    connections: r.connections.filter(c => /safe|stop|guard|curtain|reset|edm|feedback|interlock/i.test(c.signal + c.from + c.to)).slice(0, 60).map(c => `${c.from} -> ${c.to} (${c.signal})`),
+    safety_functions: r.safety_functions, findings: r.findings, cross_references: r.cross_references, verify: r.verify}));
+  let data = JSON.stringify(compact);
+  if (data.length > 52000) data = data.slice(0, 52000) + "…(truncated)";
+  return `You are an expert electrical controls engineer helping an ANSI B11 certified machine safety consultant. Below are per-sheet analyses of one drawing set (${per.length} sheets). Combine them into a set-level view: follow cross-references between sheets, join each safety function end to end (input on one sheet, logic on another, outputs on a third), and remove duplicates.
+
+${KNOWLEDGE}
+
+PER-SHEET DATA:
+${data}
+
+Reply with JSON only, in this shape:
+{"title": "name of the drawing set / machine", "summary": "5-8 plain-English sentences about the whole set", "circuits": [{"name": "", "description": "", "sequence": [""]}], "safety_functions": [same fields as the per-sheet data], "findings": [same fields as the per-sheet data, set-level and deduplicated], "verify": [""]}`;
+}
+
+/* ---------- Normalising Claude's answer ---------- */
+function normalize(r, sheetIdx){
+  r = (r && typeof r === "object" && !Array.isArray(r)) ? r : {};
+  const out = {
+    sheet: (r.sheet && typeof r.sheet === "object") ? r.sheet : {},
+    summary: str(r.summary),
+    components: arr(r.components).filter(x => x && typeof x === "object"),
+    connections: arr(r.connections).filter(x => x && typeof x === "object"),
+    circuits: arr(r.circuits).filter(x => x && typeof x === "object"),
+    safety_functions: arr(r.safety_functions).filter(x => x && typeof x === "object"),
+    findings: arr(r.findings).filter(x => x && typeof x === "object"),
+    sld: (r.sld && typeof r.sld === "object") ? r.sld : {present:false},
+    cross_references: arr(r.cross_references).filter(x => x && typeof x === "object"),
+    unreadable: arr(r.unreadable).map(str),
+    verify: arr(r.verify).map(str)
+  };
+  if (sheetIdx != null) {
+    for (const k of ["components","connections","findings"]) out[k].forEach(x => x.sheet = sheetIdx + 1);
+  }
+  return out;
+}
+function mergeReports(per){
+  const m = normalize({});
+  m.sheet = {...per[0].sheet, title: per[0].sheet.title || "Drawing set", sheet_no: `${per.length} sheets`};
+  m.summary = per.map((r, i) => `Sheet ${i+1}: ${r.summary}`).join("\n");
+  for (const r of per) for (const k of ["components","connections","circuits","safety_functions","findings","cross_references","unreadable","verify"]) m[k].push(...r[k]);
+  const slds = per.filter(r => r.sld && (r.sld.present === true || arr(r.sld.feeders).length));
+  if (slds.length) m.sld = {...slds[0].sld, present: true, feeders: slds.flatMap(r => arr(r.sld.feeders))};
+  m.sheets = per.map(r => r.sheet);
+  return m;
+}
+
+/* ---------- Run analysis ---------- */
+$("#goBtn").onclick = analyze;
+$("#stopBtn").onclick = () => state.ctl?.abort();
+let timer = null, progMsg = "";
+function setProgress(msg){
+  const p = $("#progress");
+  clearInterval(timer);
+  if (!msg) { p.hidden = true; return; }
+  progMsg = msg;
+  const t0 = Date.now();
+  const draw = () => { p.innerHTML = `${esc(progMsg)}<div class="t">${Math.round((Date.now()-t0)/1000)} s</div>`; };
+  draw(); p.hidden = false; timer = setInterval(draw, 1000);
+}
+function showErr(msg){ const e = $("#err"); e.textContent = msg; e.hidden = false; }
+function hideErr(){ $("#err").hidden = true; }
+const ERR = {
+  no_key: "Add your OpenRouter key in Setup first.",
+  no_model: "Choose a model in Setup first (tap Load vision models).",
+  bad_key: "OpenRouter rejected the key. Check it in Setup, or create a new one at openrouter.ai/settings/keys.",
+  no_credits: "Your OpenRouter credits or this key's spending limit are used up. Add credits or raise the key's limit.",
+  forbidden: "OpenRouter refused this request (key restrictions or content policy). Try another model.",
+  rate_limited: "Too many requests or a provider limit. Wait a minute and try again, or pick another model.",
+  timeout: "The model took too long. Try again, or pick a faster model.",
+  model_no_images: "This model can't read images. Pick a model from the vision list in Setup.",
+  model_unavailable: "That model isn't available right now. Pick another in Setup.",
+  too_large: "The drawing is too big for this model. Use Standard zoom, or read fewer sheets at once.",
+  bad_request: "The model rejected the request. Try another model.",
+  network: "Couldn't reach OpenRouter. Check your connection and try again.",
+  invalid_json: "The answer came back incomplete or not in the expected format. Try again, use Standard zoom, or pick another model.",
+  empty_completion: "The model returned nothing. Try again or pick another model.",
+  upstream_error: "The model provider had a problem. Try again or pick another model."
+};
+const errMsg = e => ERR[e?.code] || (e?.message ? `Something went wrong: ${e.message}` : ERR.upstream_error);
+
+async function analyze(){
+  hideErr();
+  if (!getKey()) { showErr(ERR.no_key); openSetup(); return; }
+  if (!getModel()) { showErr(ERR.no_model); openSetup(); return; }
+  if (!state.sheets.length) { showErr("Add at least one drawing first."); return; }
+  state.busy = true; state.ctl = new AbortController();
+  $("#goBtn").disabled = true; $("#stopBtn").hidden = false;
+  const n = state.sheets.length, per = [], sets = [];
+  let partial = false;
+  try {
+    for (let i = 0; i < n; i++) {
+      setProgress(`Sheet ${i+1} of ${n}: preparing zoomed sections…`);
+      const set = await imageSet(state.sheets[i], state.settings.detail, caps.images.maxCount);
+      sets.push(set);
+      setProgress(`Sheet ${i+1} of ${n}: the model is reading the drawing. This usually takes 1–3 minutes.`);
+      const r = await sample.json(extractPrompt(i, n, set), {
+        images: set.blobs, signal: state.ctl.signal,
+        onText: ({text}) => { progMsg = `Sheet ${i+1} of ${n}: writing the report… ${Math.round(text.length/100)/10}k characters`; }
+      });
+      if (sample.lastRepaired) partial = true;
+      per.push(normalize(r, n > 1 ? i : null));
+    }
+    let rep = per.length === 1 ? per[0] : mergeReports(per);
+    if (per.length > 1) {
+      setProgress("Joining the sheets: cross-references and end-to-end safety functions…");
+      try {
+        const s = await sample.json(synthPrompt(per), {signal: state.ctl.signal});
+        if (s && typeof s === "object") {
+          rep.sheet.title = str(s.title) || rep.sheet.title;
+          rep.summary = str(s.summary) || rep.summary;
+          if (arr(s.circuits).length) rep.circuits = arr(s.circuits);
+          if (arr(s.safety_functions).length) rep.safety_functions = arr(s.safety_functions);
+          if (arr(s.findings).length) rep.findings = arr(s.findings);
+          if (arr(s.verify).length) rep.verify = arr(s.verify).map(str);
+        }
+      } catch (e) {
+        if (e?.code === "cancelled") throw e;
+        rep.note = "The sheets could not be joined into one set-level review, so results are shown sheet by sheet.";
+      }
+    }
+    if (partial) rep.note = (rep.note ? rep.note + " " : "") + "The model's answer was cut off, so some components or connections at the end may be missing. Try Standard zoom, fewer sheets, or another model.";
+    finish(rep, sets);
+  } catch (e) {
+    if (per.length) {
+      finish(per.length === 1 ? per[0] : mergeReports(per), sets.slice(0, per.length));
+      state.report.note = `Stopped after ${per.length} of ${n} sheets. ${e?.code === "cancelled" ? "" : errMsg(e)}`;
+      renderReport();
+    } else if (e?.code !== "cancelled") showErr(errMsg(e));
+  } finally {
+    state.busy = false; setProgress(null);
+    $("#goBtn").disabled = false; $("#stopBtn").hidden = true;
+  }
+}
+function finish(rep, sets){
+  rep.meta = {createdAt: Date.now(), sheets: state.sheets.slice(0, sets.length).map(s => s.name), settings: {...state.settings}, model: getModel()};
+  state.report = rep; state.isExample = false; state.imgSets = sets; state.chat = []; state.tab = "overview";
+  state.explains = {}; state.explainTag = null; state.quiz = null;
+  renderReport();
+  saveHistory(rep, state.sheets[0]);
+  if (window.innerWidth < 980) $("#report").scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+/* ---------- Report rendering ---------- */
+function conf(c){ const k = confKey(c); return `<span class="conf ${k}">${k}</span>`; }
+function counts(r){
+  const f = {critical:0, major:0, minor:0, info:0};
+  r.findings.forEach(x => f[sevKey(x.severity)]++);
+  return f;
+}
+function renderReport(){
+  const r = state.report, el = $("#report");
+  const s = r.sheet || {}, f = counts(r);
+  const tabs = [
+    ["overview","Overview",""],
+    ["components","Components",r.components.length],
+    ["connections","Connections",r.connections.length],
+    ["safety","Safety review",r.findings.length],
+    ["sld","SLD",""],
+    ["verify","To verify",r.verify.length + r.unreadable.length],
+    ["learn","Learn",""],
+    ["chat","Ask",""]
+  ];
+  if (!(r.sld && (r.sld.present === true || arr(r.sld.feeders).length))) tabs.splice(4, 1);
+  if (!tabs.find(t => t[0] === state.tab)) state.tab = "overview";
+  const metaRow = (k, v) => v ? `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>` : "";
+  el.innerHTML = `
+    <div class="rhead">
+      ${state.isExample ? `<span class="ex-tag">EXAMPLE REPORT · SAMPLE DATA</span>` : ""}
+      <h2>${esc(s.title || (r.meta?.sheets?.[0]) || "Drawing analysis")}</h2>
+      <dl class="meta" style="margin:0">
+        ${metaRow("Drawing no.", s.drawing_no)}${metaRow("Sheet", s.sheet_no)}${metaRow("Revision", s.revision)}
+        ${metaRow("Standard", s.standard_detected)}${metaRow("Type", s.drawing_type)}${metaRow("Image quality", s.image_quality)}${metaRow("Read by", r.meta?.model)}
+      </dl>
+      <div class="counts">
+        <span class="pill n">${r.components.length} components</span>
+        <span class="pill n">${r.connections.length} connections</span>
+        <span class="pill n">${r.safety_functions.length} safety functions</span>
+        ${f.critical ? `<span class="pill crit">${f.critical} critical</span>` : ""}
+        ${f.major ? `<span class="pill major">${f.major} major</span>` : ""}
+        ${f.minor ? `<span class="pill minor">${f.minor} minor</span>` : ""}
+        ${f.info ? `<span class="pill info">${f.info} info</span>` : ""}
+      </div>
+      ${r.note ? `<div class="banner warn">${esc(r.note)}</div>` : ""}
+      ${s.image_quality === "poor" ? `<div class="banner warn">Image quality is poor, so expect misread text. Retake the photo closer and square-on, or use the PDF.</div>` : ""}
+      ${state.isExample ? "" : exportsHtml()}
+    </div>
+    <div class="tabs" role="tablist">${tabs.map(([k, l, c]) => `<button role="tab" data-tab="${k}" aria-selected="${state.tab === k}">${l}${c !== "" ? `<span class="c">${c}</span>` : ""}</button>`).join("")}</div>
+    <div class="tabpanel" id="tabpanel"></div>`;
+  renderTab();
+}
+$("#report").addEventListener("click", e => {
+  const t = e.target.closest("[data-tab]");
+  if (t) { state.tab = t.dataset.tab; $("#report").querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b === t)); renderTab(); return; }
+  const x = e.target.closest("[data-export]"); if (x) doExport(x.dataset.export, x);
+  const q = e.target.closest("[data-q]"); if (q) { $("#chatIn").value = q.dataset.q; ask(); }
+  const ex = e.target.closest("[data-explain]"); if (ex) explainDevice(Number(ex.dataset.explain));
+  if (e.target.closest("#closeExplain")) { state.explainTag = null; $("#explainBox").hidden = true; }
+  const lv = e.target.closest("[data-qlevel]"); if (lv) { state.quizLevel = lv.dataset.qlevel; lv.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === lv ? "true" : "false")); }
+  const qc = e.target.closest("[data-qcount]"); if (qc) { state.quizCount = Number(qc.dataset.qcount); qc.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === qc ? "true" : "false")); }
+  if (e.target.closest("#quizBtn")) startQuiz();
+  const pick = e.target.closest("[data-pick]"); if (pick) pickAnswer(pick.dataset.pick);
+});
+function exportsHtml(){
+  if (!downloads) return "";
+  return `<div class="exports"><button class="btn small" data-export="xlsx" type="button">Download Excel</button><button class="btn small" data-export="html" type="button">Download report</button><button class="btn small" data-export="json" type="button">Download JSON</button><span id="exMsg" class="empty"></span></div>`;
+}
+function renderTab(){
+  const r = state.report, p = $("#tabpanel");
+  if (state.tab === "overview") p.innerHTML = overviewHtml(r);
+  if (state.tab === "components") { p.innerHTML = componentsHtml(); bindFilter(); }
+  if (state.tab === "connections") p.innerHTML = connectionsHtml(r);
+  if (state.tab === "safety") p.innerHTML = safetyHtml(r);
+  if (state.tab === "sld") p.innerHTML = sldHtml(r.sld);
+  if (state.tab === "verify") p.innerHTML = verifyHtml(r);
+  if (state.tab === "learn") { p.innerHTML = learnHtml(); renderQuiz(); renderProgress(); }
+  if (state.tab === "chat") { p.innerHTML = chatHtml(); bindChat(); }
+}
+function overviewHtml(r){
+  const paras = esc(r.summary).split(/\n+/).map(x => `<p class="summary">${x}</p>`).join("");
+  return `<h3 class="sec">Summary</h3>${paras || '<p class="empty">No summary.</p>'}
+    <h3 class="sec">How it works</h3>
+    ${r.circuits.length ? `<div class="circuits">${r.circuits.map(c => `
+      <div class="circuit"><h4>${esc(c.name)}</h4>${c.description ? `<p>${esc(c.description)}</p>` : ""}
+      ${arr(c.sequence).length ? `<ol>${arr(c.sequence).map(x => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}</div>`).join("")}</div>` : '<p class="empty">No circuit sequences identified.</p>'}
+    ${r.cross_references.length ? `<h3 class="sec">Cross-references</h3><div class="tbl-wrap"><table><thead><tr><th>Ref</th><th>Meaning</th></tr></thead><tbody>${r.cross_references.map(x => `<tr><td class="tag">${esc(x.ref)}</td><td>${esc(x.meaning)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
+}
+function componentsHtml(){
+  return `<div class="explain" id="explainBox" ${state.explainTag ? "" : "hidden"}>${state.explainTag ? explainInner(state.explainTag, state.explains[state.explainTag] || "") : ""}</div>
+    <p class="hint" style="margin:0 0 10px">Learning a device? Tap <b>Explain</b> for its symbol, terminals and role in this circuit.</p>
+    <div class="filter"><input type="search" id="cFilter" placeholder="Filter by tag, type or function" value="${esc(state.filter)}" aria-label="Filter components">
+    <label><input type="checkbox" id="cSafe" ${state.safetyOnly ? "checked" : ""}> Safety-related only</label></div>
+    <div id="cTable"></div>`;
+}
+function bindFilter(){
+  const draw = () => {
+    const q = state.filter.toLowerCase(), multi = state.report.components.some(c => c.sheet);
+    const rows = state.report.components.filter(c => (!state.safetyOnly || c.safety_related === true || c.safety_related === "true") && (!q || JSON.stringify(c).toLowerCase().includes(q)));
+    const all = state.report.components;
+    $("#cTable").innerHTML = rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tag</th><th>Device</th><th>Function in circuit</th><th>Ratings</th><th>Location</th>${multi ? "<th>Sheet</th>" : ""}<th>Confidence</th><th>Learn</th></tr></thead><tbody>
+      ${rows.map(c => `<tr><td class="tag">${esc(c.tag)}${c.safety_related === true || c.safety_related === "true" ? '<span class="sbadge" title="Safety-related">S</span>' : ""}</td>
+        <td>${esc(c.type)}${c.symbol ? `<div class="sub">${esc(c.symbol)}</div>` : ""}</td><td>${esc(c.function)}</td><td>${esc(c.ratings)}</td><td class="mono">${esc(c.location)}</td>${multi ? `<td class="mono">${esc(c.sheet)}</td>` : ""}<td>${conf(c.confidence)}</td><td><button class="btn small" type="button" data-explain="${all.indexOf(c)}">Explain</button></td></tr>`).join("")}
+      </tbody></table></div>` : '<p class="empty">No components match.</p>';
+  };
+  $("#cFilter").oninput = e => { state.filter = e.target.value; draw(); };
+  $("#cSafe").onchange = e => { state.safetyOnly = e.target.checked; draw(); };
+  draw();
+}
+function connectionsHtml(r){
+  if (!r.connections.length) return '<p class="empty">No connections listed.</p>';
+  const multi = r.connections.some(c => c.sheet);
+  return `<div class="tbl-wrap"><table><thead><tr><th>From</th><th>To</th><th>Wire</th><th>Via</th><th>Signal / purpose</th>${multi ? "<th>Sheet</th>" : ""}<th>Confidence</th></tr></thead><tbody>
+    ${r.connections.map(c => `<tr><td class="tag">${esc(c.from)}</td><td class="tag">${esc(c.to)}</td><td class="mono">${esc(c.wire)}</td><td class="mono">${esc(c.via)}</td><td>${esc(c.signal)}</td>${multi ? `<td class="mono">${esc(c.sheet)}</td>` : ""}<td>${conf(c.confidence)}</td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+function chipYN(label, v){
+  v = String(v || "unclear").toLowerCase();
+  const cls = /^(yes|dual|monitored manual)$/.test(v) ? "ok" : /^(no|single|automatic)$/.test(v) ? "major" : "info";
+  return `<span class="pill ${cls}"><b style="font-weight:500">${label}:</b> ${esc(v)}</span>`;
+}
+function safetyHtml(r){
+  const sorted = [...r.findings].sort((a, b) => SEV.indexOf(sevKey(a.severity)) - SEV.indexOf(sevKey(b.severity)));
+  return `<div class="disclaimer">Advisory review from the drawing only. Categories and PL ranges are suggestions: confirm with the actual devices, B10D/MTTFd data and a site inspection before relying on them.</div>
+    <h3 class="sec">Safety functions</h3>
+    ${r.safety_functions.length ? `<div class="sf-grid">${r.safety_functions.map(sf => `
+      <div class="sf"><h4>${esc(sf.name)}</h4>
+        <div class="chain"><div><span>Input</span><span>${esc(sf.input_devices)}</span></div><div><span>Logic</span><span>${esc(sf.logic)}</span></div><div><span>Output</span><span>${esc(sf.output_devices)}</span></div></div>
+        <div class="chips">${chipYN("Channels", sf.channels)}${chipYN("EDM", sf.edm)}${chipYN("Cross-fault", sf.cross_fault_detection)}${chipYN("Reset", sf.reset)}<span class="pill n">Stop cat. ${esc(sf.stop_category || "unclear")}</span></div>
+        <div class="catbox"><span class="big">Cat ${esc(sf.suggested_category || "?")}</span><span>${esc(sf.likely_pl || "")}<br><span class="empty">suggested</span></span></div>
+        ${sf.rationale ? `<p style="margin:0;font-size:13px">${esc(sf.rationale)}</p>` : ""}
+      </div>`).join("")}</div>` : '<p class="empty">No safety functions found on this drawing.</p>'}
+    <h3 class="sec">Findings</h3>
+    ${sorted.length ? `<div class="findings">${sorted.map(x => { const k = sevKey(x.severity); return `
+      <div class="finding ${k}"><div class="bar"></div><div class="body">
+        <h4><span class="pill ${k === "critical" ? "crit" : k}">${k}</span>${esc(x.title)}${x.sheet ? `<span class="empty mono">sheet ${esc(x.sheet)}</span>` : ""}</h4>
+        ${x.detail ? `<p>${esc(x.detail)}</p>` : ""}
+        ${x.recommendation ? `<p class="rec">→ ${esc(x.recommendation)}</p>` : ""}
+        <p class="ref">${esc([x.reference, x.standard].filter(Boolean).join(" · "))} ${x.confidence ? conf(x.confidence) : ""}</p>
+      </div></div>`; }).join("")}</div>` : '<p class="empty">No findings.</p>'}`;
+}
+function sldHtml(s){
+  s = s || {};
+  const kv = [["Supply", s.supply], ["Incomer", s.incomer], ["Busbar", s.busbar], ["Earthing", s.earthing]].filter(x => x[1]);
+  return `${kv.length ? `<dl class="meta">${kv.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : ""}
+    <h3 class="sec">Feeders</h3>
+    ${arr(s.feeders).length ? `<div class="tbl-wrap"><table><thead><tr><th>Tag</th><th>Device</th><th>Rating</th><th>Cable</th><th>Load</th></tr></thead><tbody>${arr(s.feeders).map(x => `<tr><td class="tag">${esc(x.tag)}</td><td>${esc(x.device)}</td><td class="mono">${esc(x.rating)}</td><td class="mono">${esc(x.cable)}</td><td>${esc(x.load)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="empty">No feeders listed.</p>'}
+    ${s.notes ? `<h3 class="sec">Notes</h3><p class="summary">${esc(s.notes)}</p>` : ""}`;
+}
+function verifyHtml(r){
+  return `<h3 class="sec">Check on site or in other sheets</h3>
+    ${r.verify.length ? `<ul class="checklist">${r.verify.map((v, i) => `<li><label><input type="checkbox" id="v${i}"> <span>${esc(v)}</span></label></li>`).join("")}</ul>` : '<p class="empty">Nothing listed.</p>'}
+    <h3 class="sec">Could not read reliably</h3>
+    ${r.unreadable.length ? `<ul class="plain">${r.unreadable.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : '<p class="empty">Nothing flagged.</p>'}`;
+}
+
+/* ---------- Learn mode ---------- */
+function explainInner(tag, text){
+  return `<h4><span>Learning <span class="mono" style="color:var(--wire)">${esc(tag)}</span></span><button class="btn small" id="closeExplain" type="button">Close</button></h4><div id="explainText">${text ? md(text) : "Thinking…"}</div>`;
+}
+async function explainDevice(i){
+  const c = state.report.components[i]; if (!c) return;
+  const tag = str(c.tag) || "device";
+  state.explainTag = tag;
+  const box = $("#explainBox"); box.hidden = false; box.innerHTML = explainInner(tag, state.explains[tag] || "");
+  box.scrollIntoView({behavior: "smooth", block: "nearest"});
+  if (state.explains[tag]) return;
+  if (!getKey() || !getModel()) { $("#explainText").textContent = ERR.no_key; openSetup(); return; }
+  const related = state.report.connections.filter(x => str(x.from).includes(tag) || str(x.to).includes(tag)).slice(0, 15);
+  const prompt = `You are teaching a machine safety consultant (ANSI B11 certified, strong in sales, still learning to read electrical drawings) to read schematics. Explain one device from their drawing.
+
+Device: ${JSON.stringify(c)}
+Its connections: ${JSON.stringify(related)}
+Drawing summary: ${str(state.report.summary).slice(0, 1500)}
+Drawing standard: ${str(state.report.sheet?.standard_detected) || "unknown"}
+
+Cover, in short bullets under these bold headings:
+**What it is**: device type, and what its tag letters mean (IEC 81346 and the NEMA/JIC equivalent).
+**How to spot the symbol**: what the symbol looks like in IEC and in NEMA/JIC drawings.
+**Terminal numbers**: what each terminal number on this device means.
+**Its job here**: its role in this circuit, using the connections.
+**If it fails**: what happens if it fails open, fails shorted or welds, and whether that is dangerous.
+**Safety note**: relevance to ISO 13849 / IEC 60204-1, only if relevant.
+End with one "Try this" line: a small thing to look for on the drawing to practise.
+Stay under 230 words. Say so when the drawing data is not enough to be sure.`;
+  try {
+    const {text} = await sample(prompt, {
+      onText: ({text}) => { if (state.explainTag === tag && $("#explainText")) $("#explainText").innerHTML = md(text); }});
+    state.explains[tag] = text;
+  } catch (e) {
+    if (state.explainTag === tag && $("#explainText")) $("#explainText").textContent = errMsg(e);
+  }
+}
+
+const TOPICS = {symbols: "Symbols", terminals: "Terminal numbers", codes: "Letter codes", operation: "Circuit operation", safety: "Safety functions", standards: "Standards"};
+function learnHtml(){
+  return `<div class="learn-grid">
+    <section>
+      <h3 class="sec" style="margin-top:0">Quiz yourself on this drawing</h3>
+      <div class="field"><span class="lbl">Level</span><div class="seg">
+        ${[["beginner","Beginner"],["intermediate","Intermediate"],["advanced","Advanced"]].map(([v, l]) => `<button type="button" data-qlevel="${v}" aria-pressed="${state.quizLevel === v}">${l}</button>`).join("")}
+      </div></div>
+      <div class="field"><span class="lbl">Questions</span><div class="seg">
+        ${[5, 10].map(n => `<button type="button" data-qcount="${n}" aria-pressed="${state.quizCount === n}">${n}</button>`).join("")}
+      </div></div>
+      <button class="btn primary" id="quizBtn" type="button">${state.quiz?.items ? "New quiz" : "Start quiz"}</button>
+      <div id="quizArea" class="quiz" style="margin-top:12px"></div>
+    </section>
+    <section>
+      <h3 class="sec" style="margin-top:0">Your progress</h3>
+      <div id="progressBox"></div>
+      <h3 class="sec">How to study a drawing</h3>
+      <ol class="method">
+        <li>Read the title block and legend first: standard, sheet numbering, the maker's own symbols.</li>
+        <li>Find the supply rails, then follow power from the main switch to each load.</li>
+        <li>Spend 10 minutes writing your own device list and E-stop path before opening the report.</li>
+        <li>Compare with the Components and Safety review tabs. Every difference is a lesson.</li>
+        <li>Tap Explain on devices you didn't recognise, then take the quiz.</li>
+      </ol>
+    </section>
+  </div>
+  <h3 class="sec">Symbol guide: IEC vs NEMA / JIC</h3>
+  <p class="hint" style="margin:-4px 0 10px">Simplified sketches of common forms. Makers vary, so always check the drawing's own legend sheet.</p>
+  <div class="syms">${SYMBOLS.map(s => `<div class="sym"><h4>${esc(s.name)}</h4><div class="pair">
+    <figure>${svg(s.iec)}<figcaption>IEC</figcaption></figure><figure>${svg(s.nema)}<figcaption>NEMA / JIC</figcaption></figure></div><p>${esc(s.note)}</p></div>`).join("")}</div>
+  <h3 class="sec">Terminal numbers</h3>
+  <div class="tbl-wrap"><table><thead><tr><th>Marking</th><th>Meaning</th></tr></thead><tbody>
+    ${TERMINALS.map(([k, v]) => `<tr><td class="tag">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</tbody></table></div>
+  <h3 class="sec">Device letter codes</h3>
+  <div class="tbl-wrap"><table><thead><tr><th>Device</th><th>IEC 81346 (old / new)</th><th>NEMA / JIC</th></tr></thead><tbody>
+    ${CODES.map(([d, i, n]) => `<tr><td>${esc(d)}</td><td class="tag">${esc(i)}</td><td class="tag">${esc(n)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+const svg = inner => `<svg viewBox="0 0 80 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+const T = (x, y, s, size = 11) => `<text x="${x}" y="${y}" fill="currentColor" stroke="none" font-size="${size}" font-family="IBM Plex Mono, monospace" text-anchor="middle">${s}</text>`;
+const SYMBOLS = [
+  {name: "Normally open (NO) contact", note: "Open at rest, closes when operated. IEC terminals x3-x4 (e.g. 13-14).",
+    iec: `<path d="M40 4V20M40 40V56M40 40L29 21"/>`, nema: `<path d="M4 30H32M48 30H76M32 17V43M48 17V43"/>`},
+  {name: "Normally closed (NC) contact", note: "Closed at rest, opens when operated. IEC terminals x1-x2 (e.g. 21-22).",
+    iec: `<path d="M40 4V20H50M40 40V56M40 40L53 17"/>`, nema: `<path d="M4 30H32M48 30H76M32 17V43M48 17V43M25 45L55 15"/>`},
+  {name: "Relay / contactor coil", note: "IEC coil terminals A1 (+) and A2 (-). NEMA labels the circle CR, M or TR.",
+    iec: `<path d="M40 4V18M40 42V56"/><rect x="28" y="18" width="24" height="24"/>`, nema: `<path d="M4 30H28M52 30H76"/><circle cx="40" cy="30" r="12"/>${T(40, 34, "CR", 10)}`},
+  {name: "Push button, NO (start)", note: "Spring return. Dashed line = mechanical link to the actuator.",
+    iec: `<path d="M44 4V20M44 40V56M44 40L33 21"/><path d="M38 31H18" stroke-dasharray="3 3"/><path d="M12 24H18V38H12"/>`, nema: `<path d="M4 38H27M53 38H76"/><circle cx="30" cy="38" r="3"/><circle cx="50" cy="38" r="3"/><path d="M26 30H54M40 30V14M34 14H46"/>`},
+  {name: "Emergency stop (NC, latching)", note: "Mushroom head, NC contacts with positive (direct) opening. Terminals often 11-12, 21-22.",
+    iec: `<path d="M46 4V20H56M46 40V56M46 40L59 17"/><path d="M50 29H22" stroke-dasharray="3 3"/><path d="M22 20A9 9 0 0 0 22 38Z"/>`, nema: `<path d="M4 26H27M53 26H76"/><circle cx="30" cy="26" r="3"/><circle cx="50" cy="26" r="3"/><path d="M26 34H54M40 34V12M29 12A11 8 0 0 1 51 12Z"/>`},
+  {name: "Circuit breaker", note: "IEC: switch with × at the fixed contact. NEMA: arc between the terminals.",
+    iec: `<path d="M40 4V20M40 40V56M40 40L29 21M35 15L45 25M45 15L35 25"/>`, nema: `<path d="M4 34H25M55 34H76"/><circle cx="28" cy="34" r="3"/><circle cx="52" cy="34" r="3"/><path d="M28 29Q40 12 52 29"/>`},
+  {name: "Fuse", note: "IEC tag F / FA; NEMA tag FU. Both commonly drawn as a box with the line through it.",
+    iec: `<path d="M40 4V56"/><rect x="33" y="14" width="14" height="32"/>`, nema: `<path d="M4 30H76"/><rect x="26" y="23" width="28" height="14"/>`},
+  {name: "Motor (3-phase)", note: "IEC M 3~ with U V W (or U1 V1 W1). NEMA leads T1 T2 T3.",
+    iec: `<path d="M30 4V16M40 4V16M50 4V16"/><circle cx="40" cy="36" r="17"/>${T(40, 36, "M", 13)}${T(40, 48, "3~", 10)}`, nema: `<path d="M4 18H24M4 30H23M4 42H24"/><circle cx="42" cy="30" r="17"/>${T(42, 34, "MTR", 10)}`},
+  {name: "Indicator lamp", note: "IEC: circle with a cross, tag P/PF (old H). NEMA: circle with rays, letter = colour (R, G, A).",
+    iec: `<path d="M40 4V20M40 40V56"/><circle cx="40" cy="30" r="10"/><path d="M33 23L47 37M47 23L33 37"/>`, nema: `<path d="M4 30H30M50 30H76"/><circle cx="40" cy="30" r="10"/><path d="M40 14V10M40 46V50M29 19L26 16M51 19L54 16"/>${T(40, 34, "R", 10)}`},
+  {name: "Transformer", note: "Control transformers step 415 V down to 230/110/24 V. Check the VA rating.",
+    iec: `<path d="M40 4V12M40 48V56"/><circle cx="40" cy="23" r="11"/><circle cx="40" cy="37" r="11"/>`, nema: `<path d="M22 6V14A5 5 0 0 1 22 24A5 5 0 0 1 22 34A5 5 0 0 1 22 44V54M58 6V14A5 5 0 0 0 58 24A5 5 0 0 0 58 34A5 5 0 0 0 58 44V54M37 12V48M43 12V48"/>`}
+];
+const TERMINALS = [
+  ["13-14, 23-24, 33-34", "NO auxiliary contacts (first digit = position, 3-4 = NO)"],
+  ["11-12, 21-22, 31-32", "NC auxiliary contacts (1-2 = NC)"],
+  ["15-16 / 17-18", "Timed contacts: delayed NC / delayed NO"],
+  ["A1 / A2", "Coil supply (A1 positive or line, A2 negative or neutral)"],
+  ["1-2, 3-4, 5-6 (L1-T1, L2-T2, L3-T3)", "Main power poles of a contactor or breaker"],
+  ["95-96 / 97-98", "Overload relay: NC trip contact / NO signal contact"],
+  ["S11-S12, S21-S22", "Safety relay input channels 1 and 2"],
+  ["S33-S34 (or S34-S35)", "Safety relay reset input"],
+  ["Y1-Y2", "Safety relay feedback loop (EDM): NC mirror contacts of the output contactors"],
+  ["OSSD1 / OSSD2", "Light curtain or safety sensor solid-state safety outputs"],
+  ["41-42", "Safety relay auxiliary NC: signalling only, not a safety output"],
+  ["PE / N / L1 L2 L3", "Protective earth, neutral, phases"]
+];
+const CODES = [
+  ["Circuit breaker, contactor, motor starter", "Q / QA", "CB, M"],
+  ["Main switch / disconnector", "Q / QB", "DISC"],
+  ["Relay, safety relay, timer, PLC", "K / KF", "CR, SR, TR"],
+  ["Push button, selector, E-stop", "S / SF", "PB, SS, E-STOP"],
+  ["Limit, interlock or proximity switch", "B / BG", "LS, PRS"],
+  ["Fuse, MCB, overload", "F / FA, FC", "FU, OL"],
+  ["Motor", "M / MA", "MTR, M"],
+  ["Transformer, power supply", "T / TA, G", "XFMR, PS"],
+  ["Indicator lamp, beacon", "H / PF", "PL, LT"],
+  ["Solenoid valve coil", "Y / MB", "SOL"],
+  ["Terminal strip", "X / XD", "TB"]
+];
+
+async function startQuiz(){
+  if (!getKey() || !getModel()) { showErr(ERR.no_key); openSetup(); return; }
+  if (state.quiz?.loading) return;
+  const r = {...state.report}; delete r.meta;
+  let data = JSON.stringify(r); if (data.length > 30000) data = data.slice(0, 30000) + "…(truncated)";
+  const n = state.quizCount, lvl = state.quizLevel;
+  const weak = weakTopics().slice(0, 2).map(t => TOPICS[t] || t);
+  state.quiz = {loading: true}; renderQuiz();
+  const prompt = `Write a ${n}-question multiple-choice quiz that teaches a machine safety consultant to read electrical drawings. Base the questions on the drawing analysis below: use its real tags, terminals and circuits wherever you can, plus general knowledge of IEC 60617 / IEC 81346, NEMA / JIC, IEC 60204-1 and ISO 13849-1.
+Level: ${lvl}. Beginner = symbols, letter codes, NO/NC and terminal numbers. Intermediate = circuit operation and sequences. Advanced = safety function assessment: channels, EDM, cross-fault detection, categories, failure modes.
+Mix topics: symbols, terminals, codes, operation, safety, standards.${weak.length ? ` Include extra questions on the learner's weak areas: ${weak.join(", ")}.` : ""}
+Each question has 4 options with exactly one correct answer. Vary the position of the correct answer.
+
+Drawing analysis (JSON):
+${data}
+
+Reply with only a JSON array of ${n} objects:
+[{"q": "question", "options": ["A", "B", "C", "D"], "answer": 0, "explain": "why the answer is right, 1-3 sentences", "topic": "symbols | terminals | codes | operation | safety | standards"}]`;
+  try {
+    const items = await sample.json(prompt, {});
+    const list = arr(items).filter(q => q && typeof q.q === "string" && Array.isArray(q.options) && q.options.length >= 2).slice(0, n).map(q => {
+      const options = q.options.slice(0, 4).map(str);
+      const answer = Math.min(options.length - 1, Math.max(0, Math.round(Number(q.answer)) || 0));
+      const topic = str(q.topic).toLowerCase().trim();
+      return {q: str(q.q), options, answer, explain: str(q.explain), topic: TOPICS[topic] ? topic : "operation"};
+    });
+    if (!list.length) throw {code: "invalid_json"};
+    state.quiz = {items: list, picks: {}, level: lvl, saved: false};
+  } catch (e) {
+    state.quiz = null;
+    if (e?.code !== "cancelled") showErr(errMsg(e));
+  }
+  if (state.tab === "learn") renderTab();
+}
+function renderQuiz(){
+  const el = $("#quizArea"); if (!el) return;
+  const q = state.quiz;
+  if (!q) { el.innerHTML = `<p class="empty">${state.isExample ? "You can practise on the example report now, or read your own drawing first." : "Questions are written from this drawing, using its real tags and terminals."}</p>`; return; }
+  if (q.loading) { el.innerHTML = '<div class="progress">Writing your quiz… this takes about 20–60 seconds.</div>'; return; }
+  const answered = Object.keys(q.picks).length, right = q.items.filter((it, i) => q.picks[i] === it.answer).length;
+  el.innerHTML = q.items.map((it, i) => {
+    const picked = q.picks[i], done = picked !== undefined;
+    return `<div class="qcard"><span class="qn">Question ${i+1} of ${q.items.length} · ${esc(TOPICS[it.topic])}</span><div class="q">${esc(it.q)}</div>
+      <div class="opts-q">${it.options.map((o, j) => `<button type="button" data-pick="${i}:${j}" ${done ? "disabled" : ""} class="${done && j === it.answer ? "right" : done && j === picked ? "wrong" : ""}">${String.fromCharCode(65 + j)}. ${esc(o)}</button>`).join("")}</div>
+      ${done ? `<div class="qexp"><b>${picked === it.answer ? "Correct." : "Not quite."}</b> ${esc(it.explain)}</div>` : ""}</div>`;
+  }).join("") + (answered === q.items.length ? `<div class="qcard"><span class="qn">Result</span><div class="score">${right} / ${q.items.length}</div><div class="empty">${right === q.items.length ? "Full marks. Try the next level." : "Review the explanations above, then take a new quiz."}${db ? " Saved to your progress." : ""}</div></div>` : "");
+}
+function pickAnswer(v){
+  const q = state.quiz; if (!q?.items) return;
+  const [i, j] = v.split(":").map(Number);
+  if (q.picks[i] !== undefined) return;
+  q.picks[i] = j;
+  renderQuiz();
+  if (Object.keys(q.picks).length === q.items.length && !q.saved) { q.saved = true; saveProgress(q); }
+}
+async function saveProgress(q){
+  const topics = {};
+  q.items.forEach((it, i) => { const t = topics[it.topic] || (topics[it.topic] = [0, 0]); t[1]++; if (q.picks[i] === it.answer) t[0]++; });
+  const entry = {at: Date.now(), score: q.items.filter((it, i) => q.picks[i] === it.answer).length, total: q.items.length, level: q.level, title: str(state.report.sheet?.title).slice(0, 120), topics};
+  progress = {attempts: [...arr(progress.attempts), entry].slice(-200)};
+  renderProgress();
+  if (!db) return;
+  try { await db.doc("learn/progress").set({attempts: progress.attempts}); }
+  catch { showErr("Couldn't save your quiz score. It will show until you close the page."); }
+}
+function startProgress(){
+  if (!db) return;
+  db.doc("learn/progress").onSnapshot(s => {
+    const d = s.exists ? s.data() : null;
+    progress = {attempts: arr(d?.attempts).map(a => ({...a}))};
+    renderProgress();
+  }, () => {});
+}
+function weakTopics(){
+  const t = {};
+  for (const a of arr(progress.attempts)) for (const [k, v] of Object.entries(a.topics || {})) { const x = t[k] || (t[k] = [0, 0]); x[0] += Number(v[0]) || 0; x[1] += Number(v[1]) || 0; }
+  return Object.entries(t).filter(([, v]) => v[1] >= 2).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]).map(([k]) => k);
+}
+function renderProgress(){
+  const el = $("#progressBox"); if (!el) return;
+  const at = arr(progress.attempts);
+  if (!at.length) { el.innerHTML = `<p class="empty">No quizzes yet. Your scores ${db ? "are saved here and sync between phone and desktop" : "show here"}.</p>`; return; }
+  const tot = at.reduce((s, a) => s + (Number(a.total) || 0), 0), ok = at.reduce((s, a) => s + (Number(a.score) || 0), 0);
+  const week = at.filter(a => Date.now() - a.at < 7 * 864e5).length;
+  const t = {};
+  for (const a of at) for (const [k, v] of Object.entries(a.topics || {})) { const x = t[k] || (t[k] = [0, 0]); x[0] += Number(v[0]) || 0; x[1] += Number(v[1]) || 0; }
+  const rows = Object.entries(t).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]);
+  el.innerHTML = `<div class="stats">
+      <div class="stat"><b>${at.length}</b><span>quizzes taken</span></div>
+      <div class="stat"><b>${tot ? Math.round(ok / tot * 100) : 0}%</b><span>correct overall</span></div>
+      <div class="stat"><b>${week}</b><span>this week</span></div></div>
+    <div class="bars">${rows.map(([k, v]) => { const p = Math.round(v[0] / v[1] * 100); return `<div><span>${esc(TOPICS[k] || k)}</span><i style="--w:${p}%"></i><em>${p}%</em></div>`; }).join("")}</div>
+    ${rows.length ? `<p class="hint">Weakest first. New quizzes add extra questions on your two weakest topics.</p>` : ""}`;
+}
+
+/* ---------- Chat ---------- */
+function md(t){
+  const lines = esc(t).split("\n"); let html = "", list = null;
+  const inline = s => s.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+  for (const ln of lines) {
+    const m = ln.match(/^\s*([-*]|\d+\.)\s+(.*)$/);
+    if (m) { const t = /\d/.test(m[1]) ? "ol" : "ul"; if (list !== t) { if (list) html += `</${list}>`; html += `<${t}>`; list = t; } html += `<li>${inline(m[2])}</li>`; continue; }
+    if (list) { html += `</${list}>`; list = null; }
+    const h = ln.match(/^#{1,4}\s+(.*)$/);
+    if (h) html += `<p><b>${inline(h[1])}</b></p>`; else if (ln.trim()) html += `<p>${inline(ln)}</p>`;
+  }
+  if (list) html += `</${list}>`;
+  return html;
+}
+const SUGGEST = ["Explain how the machine starts, step by step", "What happens when the E-stop is pressed?", "Which contacts are in series with the safety relay feedback loop?", "What would it take to reach Category 3 / PLd here?", "List all devices fed from the 24 V DC supply"];
+function chatHtml(){
+  const hasImgs = state.imgSets.length > 0;
+  return `<div class="chat">
+    ${state.isExample ? `<div class="banner info">Questions work after you read your own drawing. The example has no drawing attached.</div>` : ""}
+    <div class="msgs" id="msgs">${state.chat.length ? state.chat.map(m => `<div class="msg ${m.role === "user" ? "u" : "a"}">${m.role === "user" ? esc(m.content) : md(m.content)}</div>`).join("") : '<p class="empty">Ask anything about this drawing: a device, a wire, a sequence, a safety function.</p>'}</div>
+    <div class="suggest">${SUGGEST.map(q => `<button type="button" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+    <div class="composer"><textarea id="chatIn" placeholder="e.g. What de-energises -K3?" aria-label="Your question"></textarea><button class="btn primary" id="askBtn" type="button">Ask</button></div>
+    <div class="opts">
+      <label><input type="checkbox" id="withImg" ${hasImgs ? "checked" : "disabled"}> Include the drawing images (more accurate, uses more credits)</label>
+      ${state.imgSets.length > 1 ? `<label>Sheet <select id="imgSheet">${state.imgSets.map((s, i) => `<option value="${i}">${i+1}. ${esc(s.name)}</option>`).join("")}</select></label>` : ""}
+      ${!hasImgs && !state.isExample ? "<span>Saved reports answer from the report text only. Re-read the drawing to include images.</span>" : ""}
+    </div>
+  </div>`;
+}
+function bindChat(){
+  $("#askBtn").onclick = ask;
+  $("#chatIn").onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); } };
+  const m = $("#msgs"); m.scrollTop = m.scrollHeight;
+}
+async function ask(){
+  const box = $("#chatIn"), q = box.value.trim();
+  if (!q || state.busy) return;
+  if (state.isExample) return;
+  if (!getKey() || !getModel()) { showErr(ERR.no_key); openSetup(); return; }
+  const withImg = $("#withImg")?.checked && state.imgSets.length;
+  const set = withImg ? state.imgSets[Number($("#imgSheet")?.value || 0)] : null;
+  const r = {...state.report}; delete r.meta;
+  let data = JSON.stringify(r); if (data.length > 38000) data = data.slice(0, 38000) + "…(truncated)";
+  const intro = `You are an expert electrical controls engineer helping an ANSI B11 certified machine safety consultant understand an electrical drawing. Answer their questions precisely and concisely: cite device tags, terminal numbers, wire numbers and sheet/column locations. Say clearly when something is not shown on the drawing or cannot be read, and separate what is shown from what you infer. Safety judgements are advisory. Use short paragraphs or bullets, no tables.
+
+${set ? `Attached images: ${set.desc.join(" ")} (sheet "${set.name}").` : "No images are attached; answer from the analysis below."}
+
+Analysis already extracted from the drawing (JSON):
+${data}`;
+  state.chat.push({role: "user", content: q});
+  const turns = [{role: "user", content: intro}, {role: "assistant", content: "Understood. I have the drawing analysis. What would you like to know?"}, ...state.chat.slice(-12)];
+  while (turns.length > 3 && turns[2].role !== "user") turns.splice(2, 1);
+  box.value = ""; renderTab();
+  const msgs = $("#msgs"), bubble = document.createElement("div");
+  bubble.className = "msg a"; bubble.textContent = "Thinking…"; msgs.appendChild(bubble); msgs.scrollTop = msgs.scrollHeight;
+  state.busy = true; $("#askBtn").disabled = true;
+  try {
+    const {text} = await sample(turns, {images: set ? set.blobs : undefined,
+      onText: ({text}) => { bubble.innerHTML = md(text); msgs.scrollTop = msgs.scrollHeight; }});
+    state.chat.push({role: "assistant", content: text});
+  } catch (e) {
+    const keep = e?.text || "";
+    if (keep) state.chat.push({role: "assistant", content: keep + "\n\n(Answer interrupted.)"});
+    else state.chat.pop();
+    showErr(errMsg(e));
+  } finally {
+    state.busy = false; if (state.tab === "chat") renderTab();
+  }
+}
+
+/* ---------- Exports ---------- */
+function fileBase(){ return (state.report.sheet?.title || "schematic-report").replace(/[^\w\- ]+/g, "").trim().slice(0, 60) || "schematic-report"; }
+async function doExport(kind, btn){
+  if (!downloads) return;
+  const msg = $("#exMsg"); msg.textContent = "Preparing…"; btn.disabled = true;
+  try {
+    let data, name;
+    if (kind === "json") { data = JSON.stringify(state.report, null, 2); name = fileBase() + ".json"; }
+    if (kind === "html") { data = reportDoc(); name = fileBase() + ".html"; }
+    if (kind === "xlsx") {
+      if (!window.XLSX) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+      const r = state.report, wb = XLSX.utils.book_new();
+      const add = (rows, nm) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{note: "none"}]), nm);
+      const flat = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, Array.isArray(v) ? v.join("; ") : str(v)]));
+      add([{field: "Title", value: r.sheet?.title}, {field: "Drawing no.", value: r.sheet?.drawing_no}, {field: "Standard", value: r.sheet?.standard_detected}, {field: "Type", value: r.sheet?.drawing_type}, {field: "Summary", value: r.summary}].map(flat), "Summary");
+      add(r.components.map(flat), "Components");
+      add(r.connections.map(flat), "Connections");
+      add(r.safety_functions.map(flat), "Safety functions");
+      add(r.findings.map(flat), "Findings");
+      add(r.circuits.map(c => flat({name: c.name, description: c.description, sequence: arr(c.sequence)})), "Sequences");
+      if (arr(r.sld?.feeders).length) add(r.sld.feeders.map(flat), "SLD feeders");
+      add([...r.verify.map(v => ({type: "verify", item: v})), ...r.unreadable.map(v => ({type: "unreadable", item: v}))], "To verify");
+      data = new Blob([XLSX.write(wb, {bookType: "xlsx", type: "array"})]); name = fileBase() + ".xlsx";
+    }
+    await downloads.save({filename: name, data});
+    msg.textContent = "Saved.";
+  } catch (e) {
+    msg.textContent = e?.code === "declined" ? "" : "Couldn't save the file.";
+  } finally { btn.disabled = false; }
+}
+function reportDoc(){
+  const r = state.report, s = r.sheet || {};
+  const tbl = (cols, rows) => rows.length ? `<table><tr>${cols.map(c => `<th>${esc(c[1])}</th>`).join("")}</tr>${rows.map(x => `<tr>${cols.map(c => `<td>${esc(str(x[c[0]]))}</td>`).join("")}</tr>`).join("")}</table>` : "<p>None.</p>";
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(s.title || "Schematic report")}</title>
+<style>body{font:14px/1.5 Arial,sans-serif;color:#16222c;max-width:1000px;margin:24px auto;padding:0 16px}h1{margin:0 0 4px}h2{border-bottom:3px solid #f2b705;padding-bottom:4px;margin-top:28px}table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{border:1px solid #cfd6d0;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eef1ec}.d{color:#56636e;font-size:12px}</style></head><body>
+<h1>${esc(s.title || "Schematic report")}</h1>
+<p class="d">${esc([s.drawing_no && "Drawing " + s.drawing_no, s.sheet_no && "Sheet " + s.sheet_no, s.revision && "Rev " + s.revision, s.standard_detected, s.drawing_type].filter(Boolean).join(" · "))}<br>Generated ${new Date(r.meta?.createdAt || Date.now()).toLocaleString()} with Ravi's Machine Safety – Electrical &amp; Control Circuit App. Advisory only: verify against the actual installation.</p>
+<h2>Summary</h2>${esc(r.summary).split(/\n+/).map(p => `<p>${p}</p>`).join("")}
+<h2>How it works</h2>${r.circuits.map(c => `<h3>${esc(c.name)}</h3><p>${esc(c.description)}</p><ol>${arr(c.sequence).map(x => `<li>${esc(x)}</li>`).join("")}</ol>`).join("") || "<p>None.</p>"}
+<h2>Components</h2>${tbl([["tag","Tag"],["type","Device"],["symbol","Symbol"],["function","Function"],["ratings","Ratings"],["location","Location"],["safety_related","Safety"],["confidence","Confidence"]], r.components)}
+<h2>Connections</h2>${tbl([["from","From"],["to","To"],["wire","Wire"],["via","Via"],["signal","Signal"],["confidence","Confidence"]], r.connections)}
+<h2>Safety functions</h2>${tbl([["name","Function"],["input_devices","Input"],["logic","Logic"],["output_devices","Output"],["channels","Channels"],["edm","EDM"],["cross_fault_detection","Cross-fault"],["reset","Reset"],["stop_category","Stop cat."],["suggested_category","Suggested cat."],["likely_pl","Likely PL"],["rationale","Rationale"]], r.safety_functions)}
+<h2>Findings</h2>${tbl([["severity","Severity"],["title","Finding"],["detail","Detail"],["reference","Reference"],["recommendation","Recommendation"],["standard","Standard"],["confidence","Confidence"]], [...r.findings].sort((a, b) => SEV.indexOf(sevKey(a.severity)) - SEV.indexOf(sevKey(b.severity))))}
+${arr(r.sld?.feeders).length ? `<h2>Single-line diagram</h2><p>${esc([r.sld.supply, r.sld.incomer, r.sld.busbar, r.sld.earthing].filter(Boolean).join(" · "))}</p>${tbl([["tag","Tag"],["device","Device"],["rating","Rating"],["cable","Cable"],["load","Load"]], r.sld.feeders)}` : ""}
+<h2>To verify</h2><ul>${r.verify.map(v => `<li>${esc(v)}</li>`).join("")}</ul>
+${r.unreadable.length ? `<h2>Could not read reliably</h2><ul>${r.unreadable.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : ""}
+</body></html>`;
+}
+
+/* ---------- Saved reports (shared db, kept across devices) ---------- */
+let histDocs = [];
+function startHistory(){
+  if (!db) { $("#hist").innerHTML = '<p class="empty">Saved reports need a browser that allows site storage.</p>'; return; }
+  db.collection("reports").orderBy("createdAt", "desc").limit(60).onSnapshot(snap => {
+    histDocs = snap.docs; renderHistory(histDocs);
+  }, () => { $("#hist").innerHTML = '<p class="empty">Saved reports are unavailable right now.</p>'; });
+}
+function renderHistory(docs){
+  const el = $("#hist");
+  if (!db) { el.innerHTML = '<p class="empty">Saved reports appear here.</p>'; return; }
+  if (!docs.length) { el.innerHTML = '<p class="empty">Each drawing you read is saved here automatically, on this device.</p>'; return; }
+  el.innerHTML = docs.map(d => { const x = d.data(); return `
+    <div class="hitem" data-id="${esc(d.id)}">
+      ${x.thumb ? `<img src="${esc(x.thumb)}" alt="">` : '<div class="ph"></div>'}
+      <div style="min-width:0"><div class="t" title="${esc(x.title)}">${esc(x.title)}</div><div class="d">${new Date(x.createdAt).toLocaleDateString(undefined, {day:"numeric", month:"short", year:"numeric"})} · ${esc(x.findings || 0)} findings${x.model ? " · " + esc(String(x.model).split("/").pop()) : ""}</div></div>
+      <div class="acts"><button class="btn small" data-h="open" type="button">Open</button><button class="btn small danger" data-h="del" type="button">Delete</button></div>
+    </div>`; }).join("");
+}
+$("#hist").addEventListener("click", async e => {
+  const b = e.target.closest("[data-h]"); if (!b || !db) return;
+  const id = b.closest(".hitem").dataset.id, d = histDocs.find(x => x.id === id); if (!d) return;
+  if (b.dataset.h === "open") {
+    const x = d.data();
+    state.report = normalize(JSON.parse(JSON.stringify(x.report)));
+    state.report.meta = x.report.meta; state.report.note = x.report.note;
+    state.isExample = false; state.imgSets = []; state.chat = []; state.tab = "overview";
+    state.explains = {}; state.explainTag = null; state.quiz = null;
+    renderReport();
+    if (window.innerWidth < 980) $("#report").scrollIntoView({behavior: "smooth", block: "start"});
+  }
+  if (b.dataset.h === "del") {
+    if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Confirm"; setTimeout(() => { if (b.isConnected) { b.dataset.armed = ""; b.textContent = "Delete"; } }, 4000); return; }
+    b.disabled = true;
+    try { await db.doc("reports/" + id).delete(); } catch { showErr("Couldn't delete that report. Try again."); b.disabled = false; }
+  }
+});
+async function saveHistory(rep, sheet){
+  if (!db) return;
+  const doc = {title: rep.sheet?.title || rep.meta?.sheets?.[0] || "Drawing", createdAt: rep.meta?.createdAt || Date.now(),
+    findings: rep.findings.length, model: rep.meta?.model || "", thumb: sheet ? thumbOf(sheet.canvas, 120, .6) : "", report: rep};
+  if (JSON.stringify(doc).length > 250000) { doc.report = {...rep, connections: rep.connections.slice(0, 60)}; doc.report.note = (rep.note ? rep.note + " " : "") + "Saved copy keeps the first 60 connections."; }
+  if (JSON.stringify(doc).length > 250000) { showErr("This report is too large to save. Download it as Excel or JSON instead."); return; }
+  try { await db.collection("reports").add(doc); }
+  catch (e) { showErr(e?.code === "quota_exceeded" ? "Saved reports are full. Delete some old ones." : "Couldn't save this report to your history."); }
+}
+
+renderSheets();
+renderReport();
+initConnection();
+</script>
+</body>
+</html>

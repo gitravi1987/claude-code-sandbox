@@ -2,6 +2,14 @@
 
 A single-page web app that reads electrical drawings: IEC and NEMA/JIC control circuits, safety circuits, PLC I/O and single-line diagrams. It is built for machine safety consultants and styled in Tesseract colours (graphite with safety amber, Sora headings). It has a light/dark switch.
 
+## Two versions
+
+- `schematic-reader/index.html`: the claude.ai artifact. It can't send images to Claude on every account, so it is kept for Learn, Ask and quizzes only.
+- `docs/index.html`: the standalone website (the main version). It reads drawings through an **OpenRouter** API key that you paste into Setup. Publish it with GitHub Pages: Settings → Pages → Source "Deploy from a branch" → branch `claude/schematic-reader-mobile-app-in59pe` → folder `/docs` → Save. The site appears at https://gitravi1987.github.io/claude-code-sandbox/.
+  - The key and chosen model stay in the browser (localStorage). Saved reports and quiz scores stay in the browser (IndexedDB), per device.
+  - The model list is loaded live from OpenRouter (vision models only). Compare two or three models on the same sheet: each saved report records which model read it.
+  - Give the key a monthly spending limit in OpenRouter.
+
 ## Learn mode
 
 - **Explain** on any component: Claude teaches that device, covering its symbol in IEC and NEMA, its terminal numbers, its role in this circuit and its failure modes.
