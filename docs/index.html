@@ -261,6 +261,20 @@ input[type=text],input[type=password],input[type=search]{width:100%;border:1px s
 .pick:hover{border-color:var(--accent)}
 #picks{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 #picks:empty{display:none}
+.field>label.chk{display:flex;gap:8px;align-items:flex-start;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink);font-size:13.5px;line-height:1.4}
+.markbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.markbar select{flex:1;min-width:140px;max-width:100%;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:6px 8px;min-height:32px}
+.markopt{margin:8px 0;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface-2)}
+.markopt summary{cursor:pointer;font-size:13px;font-weight:600}
+.markopt input{margin-top:8px}
+.markctl{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+.catchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.catchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:4px 10px;font-size:12.5px;cursor:pointer;text-transform:capitalize}
+.catchip[aria-pressed="false"]{opacity:.45}
+.catchip i,.sw{display:inline-block;width:10px;height:10px;border-radius:2px}
+.sw{margin-right:6px}
+.markscroll{overflow:auto;max-height:75vh;border:1px solid var(--line);border-radius:8px;background:#fff;-webkit-overflow-scrolling:touch}
+.markscroll canvas{display:block;max-width:none;height:auto}
 ol.method{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-direction:column;gap:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -304,6 +318,7 @@ ol.method{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-directio
             <div id="picks"></div>
             <input id="modelFilter" type="search" placeholder="Filter: gemini, qwen, deepseek…" aria-label="Filter models" style="margin-top:8px" hidden>
             <select id="modelSel" aria-label="Vision models" hidden></select>
+            <datalist id="visionList"></datalist>
             <p class="hint" id="modelHint" style="margin:0"></p>
           </div>
           <div id="usageInfo" class="hint" style="margin:0"></div>
@@ -346,6 +361,9 @@ ol.method{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-directio
             <button type="button" data-v="standard" aria-pressed="true">Standard · 2×2</button>
             <button type="button" data-v="high" aria-pressed="false">Dense sheet · 3×3</button>
           </div>
+        </div>
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="autoMark" checked> <span>Mark components on the drawing after reading (one extra call per sheet)</span></label>
         </div>
         <div class="field">
           <label for="ctx">Context (optional)</label>
@@ -517,7 +535,7 @@ function httpCode(status, msg){
 
 /* Same call shape the rest of the app uses: sample(input, {images, signal, onText}) -> {text, truncated} */
 async function sample(input, opts = {}){
-  const key = getKey(), model = getModel();
+  const key = getKey(), model = opts.model || getModel();
   if (!key) throw {code: "no_key", message: "No API key"};
   if (!model) throw {code: "no_model", message: "No model chosen"};
   const turns = typeof input === "string" ? [{role: "user", content: input}] : input;
@@ -713,6 +731,7 @@ async function loadModels(force){
     } catch { msg.textContent = "Couldn't load the list. You can still type a model ID above."; return; }
   }
   visionModels = list; msg.textContent = `${list.length} vision models`;
+  $("#visionList").innerHTML = list.slice(0, 300).map(m => `<option value="${esc(m.id)}"></option>`).join("");
   $("#modelFilter").hidden = false; $("#modelSel").hidden = false;
   renderModelPicks(); fillModelSelect(); updateSetupState();
 }
@@ -731,6 +750,7 @@ function makeLocalDb(){
   const notify = () => subs.forEach(f => { try { f(); } catch {} });
   const snap = path => ({id: path.split("/").pop(), exists: mem.has(path), data: () => mem.get(path)});
   const docRef = path => ({
+    id: path.split("/").pop(), path,
     async get(){ await ready; return snap(path); },
     async set(data){ await ready; const v = JSON.parse(JSON.stringify(data)); mem.set(path, v); persist(path, v); notify(); },
     async delete(){ await ready; mem.delete(path); persist(path, undefined); notify(); },
@@ -770,6 +790,8 @@ function initConnection(){
   $("#modelId").value = store.get("rms-or-model");
   if (getKey()) { $("#keyIn").placeholder = "Key saved (…" + getKey().slice(-4) + ")"; }
   updateSetupState(); renderUsage();
+  $("#autoMark").checked = store.get("rms-automark") !== "0";
+  $("#autoMark").onchange = e => store.set("rms-automark", e.target.checked ? "1" : "0");
   if (!getKey() || !getModel()) $("#setup").open = true;
   loadModels(false);
 }
@@ -1064,6 +1086,7 @@ function finish(rep, sets){
   state.explains = {}; state.explainTag = null; state.quiz = null;
   renderReport();
   saveHistory(rep, state.sheets[0]);
+  autoMark(sets.length);
   if (window.innerWidth < 980) $("#report").scrollIntoView({behavior: "smooth", block: "start"});
 }
 
@@ -1079,6 +1102,7 @@ function renderReport(){
   const s = r.sheet || {}, f = counts(r);
   const tabs = [
     ["overview","Overview",""],
+    ["marks","Marked drawing",arr(r.marked).length || ""],
     ["components","Components",r.components.length],
     ["connections","Connections",r.connections.length],
     ["safety","Safety review",r.findings.length],
@@ -1139,6 +1163,7 @@ function renderTab(){
   if (state.tab === "safety") p.innerHTML = safetyHtml(r);
   if (state.tab === "sld") p.innerHTML = sldHtml(r.sld);
   if (state.tab === "verify") p.innerHTML = verifyHtml(r);
+  if (state.tab === "marks") { p.innerHTML = marksHtml(); renderMarks(); }
   if (state.tab === "learn") { p.innerHTML = learnHtml(); renderQuiz(); renderProgress(); }
   if (state.tab === "chat") { p.innerHTML = chatHtml(); bindChat(); }
 }
@@ -1512,6 +1537,210 @@ ${data}`;
   }
 }
 
+/* ---------- Marked drawing: labels drawn on the uploaded image ---------- */
+const MARK_COLORS = {power: "#1f5fae", control: "#a86a00", safety: "#c42b2b", load: "#2c7a4b", signal: "#7a4fb5", other: "#56606a"};
+const MARK_CATS = Object.keys(MARK_COLORS);
+const catKey = c => { c = String(c || "").toLowerCase().trim(); return MARK_COLORS[c] ? c : "other"; };
+const shortModel = m => String(m || "").split("/").pop();
+const markState = {sel: "", mode: "full", zoom: 1, cats: new Set(MARK_CATS), busy: false, ctl: null, status: "", error: ""};
+const markEntries = () => (state.report.marked = state.report.marked || []);
+const markModelId = () => store.get("rms-or-mark-model").trim();
+const imgCache = new WeakMap();
+const imgOf = e => {
+  if (!imgCache.has(e)) imgCache.set(e, new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("image")); im.src = e.img; }));
+  return imgCache.get(e);
+};
+
+// Turn the model's boxes into fractions 0..1: [x1, y1, x2, y2]
+function cleanMarks(raw, W, H){
+  const list = Array.isArray(raw) ? raw : arr(raw?.marks);
+  const out = [];
+  for (const m of list) {
+    if (!m || typeof m !== "object") continue;
+    let b = arr(m.box || m.box_2d || m.bbox).map(Number);
+    if (b.length !== 4 || b.some(v => !Number.isFinite(v))) continue;
+    const mx = Math.max(...b);
+    if (mx > 1.0001 && mx <= 1000) b = b.map(v => v / 1000);
+    else if (mx > 1000) b = [b[0] / W, b[1] / H, b[2] / W, b[3] / H];
+    let [x1, y1, x2, y2] = b;
+    if (x2 < x1) [x1, x2] = [x2, x1];
+    if (y2 < y1) [y1, y2] = [y2, y1];
+    const cl = v => Math.max(0, Math.min(1, v));
+    x1 = cl(x1); y1 = cl(y1); x2 = cl(x2); y2 = cl(y2);
+    if (x2 - x1 < 0.003 || y2 - y1 < 0.003) continue;
+    const tag = str(m.tag).trim(), device = str(m.device).trim(), st = str(m.state).trim().toUpperCase();
+    const state_ = st === "NO" || st === "NC" ? st : "";
+    const label = (str(m.label).trim() || [tag, device, state_].filter(Boolean).join(" ")).slice(0, 60);
+    if (!label) continue;
+    out.push({label, tag: tag.slice(0, 30), device: device.slice(0, 40), state: state_, category: catKey(m.category), confidence: confKey(m.confidence), box: [x1, y1, x2, y2]});
+  }
+  return out.slice(0, 120);
+}
+
+function markHints(name){
+  const r = state.report; if (state.isExample || !r) return "";
+  const idx = arr(r.meta?.sheets).indexOf(name); if (idx < 0) return "";
+  const comps = arr(r.components).filter(c => !c.sheet || c.sheet === idx + 1);
+  if (!comps.length) return "";
+  return "Devices already read from this sheet (use these tags and names where they match, and still box each one you can see):\n" + comps.slice(0, 70).map(c => `- ${str(c.tag)} | ${str(c.type)} | ${str(c.location)}`).join("\n") + "\n\n";
+}
+function markPrompt(name, W, H){
+  return `You are marking up an electrical drawing for a machine safety consultant. The attached image is the full sheet "${name}" (${W}×${H} px). It may be rotated or photographed at an angle; describe positions as they appear in the image.
+
+${markHints(name)}Task: find every electrical symbol you can see (contacts, coils, contactors, relays, breakers, fuses, motors, drives, transformers, push buttons, E-stops, limit or interlock switches, sensors, lamps, solenoids, terminals, power supplies, earth symbols) and return a short label and a box for each.
+
+Label rules:
+- Format: "<tag> <device> <state>". tag = the printed reference if readable (K1, -Q2, VFD-8, MCB-27), otherwise leave it out. device = plain name (Contactor, Relay coil, MCB 3P, Fuse, Motor 3~, VFD, Push button, E-stop, Limit switch, Transformer, Safety relay, Light curtain, Overload, Solenoid, Lamp, Power supply, Earth, Terminal).
+- state = NO or NC only for contact-type symbols where the drawing shows it (contactor or relay contacts, push buttons, switches, E-stops). Leave it out for coils, motors, fuses and the like. Examples: "K1 Contactor NC", "S1 E-stop NC", "K1 Contactor coil", "MCB-27 MCB 2P", "M3 Motor 3~".
+- Only mark symbols you can actually see. Never invent a tag; leave it out if you cannot read it. Do not mark plain wires or text blocks. Maximum 70 marks; if there are more, keep the safety and control devices.
+
+Box rules: box = [x1, y1, x2, y2], integers from 0 to 1000, measured across the whole image. 0,0 is the top-left corner and 1000,1000 the bottom-right, whatever the pixel size. Fit the box tightly around the symbol.
+category is one of: power (breakers, fuses, contactor main poles, drives, transformers), control (relays, coils, control contacts, PLC), safety (E-stops, interlocks, light curtains, safety relays), load (motors, valves, heaters, lamps), signal (sensors, terminals, power supplies), other.
+
+Reply with only JSON in this shape:
+{"marks":[{"label":"K1 Contactor NC","tag":"K1","device":"Contactor","state":"NC","category":"control","box":[100,200,140,260],"confidence":"high"}]}`;
+}
+
+async function markSheet(sheet, ctl){
+  const W0 = sheet.canvas.width, H0 = sheet.canvas.height;
+  const send = crop(sheet.canvas, 0, 0, W0, H0, 2400), blob = await toBlob(send);
+  const model = markModelId();
+  const raw = await sample.json(markPrompt(sheet.name, send.width, send.height), {images: blob, signal: ctl.signal, model: model || undefined});
+  const partial = sample.lastRepaired;
+  const keep = crop(sheet.canvas, 0, 0, W0, H0, 1600);
+  return {name: sheet.name, img: keep.toDataURL("image/jpeg", .78), w: keep.width, h: keep.height, marks: cleanMarks(raw, send.width, send.height), swap: false, model: model || getModel(), at: Date.now(), partial};
+}
+function updateMarkTab(){
+  const btn = $('[data-tab="marks"]'); if (!btn) return;
+  const n = arr(state.report.marked).length;
+  btn.innerHTML = `Marked drawing${markState.busy ? '<span class="c">…</span>' : n ? `<span class="c">${n}</span>` : ""}`;
+}
+async function runMarking(sheets, rep){
+  if (markState.busy || !sheets.length) return;
+  if (!getKey() || !(markModelId() || getModel())) { showErr(ERR.no_key); openSetup(); return; }
+  markState.busy = true; markState.ctl = new AbortController(); markState.error = "";
+  const here = () => state.report === rep && state.tab === "marks";
+  updateMarkTab(); if (here()) renderTab();
+  try {
+    for (let i = 0; i < sheets.length; i++) {
+      markState.status = `Marking sheet ${i + 1} of ${sheets.length}: ${sheets[i].name}… about 1–2 minutes each.`;
+      const el = $("#markStatus"); if (el && here()) el.textContent = markState.status;
+      const entry = await markSheet(sheets[i], markState.ctl);
+      const list = (rep.marked = rep.marked || []), at = list.findIndex(x => x.name === entry.name);
+      if (at >= 0) list[at] = entry; else list.push(entry);
+      markState.sel = entry.name;
+      persistReport(rep);
+      if (here()) renderTab();
+    }
+  } catch (e) {
+    if (e?.code !== "cancelled") markState.error = errMsg(e);
+  } finally {
+    markState.busy = false; markState.ctl = null; markState.status = "";
+    updateMarkTab(); if (here()) renderTab();
+  }
+}
+function autoMark(count){
+  if (!$("#autoMark").checked) return;
+  runMarking(state.sheets.slice(0, count).map(s => ({name: s.name, canvas: s.canvas})), state.report);
+}
+function startMarking(){
+  const s = state.sheets.find(x => x.name === markState.sel);
+  if (s) runMarking([{name: s.name, canvas: s.canvas}], state.report);
+}
+
+function drawMarked(canvas, img, e, mode, cats){
+  const W = img.naturalWidth, H = img.naturalHeight;
+  canvas.width = W; canvas.height = H;
+  const c = canvas.getContext("2d");
+  c.drawImage(img, 0, 0);
+  const fs = Math.max(16, Math.round(W / 60)) * (mode === "num" ? 1.25 : 1), lw = Math.max(2, Math.round(W / 700)), pad = Math.round(fs * .35);
+  c.font = `600 ${fs}px "IBM Plex Sans", Arial, sans-serif`; c.textBaseline = "middle"; c.lineJoin = "round";
+  const placed = [], hit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  e.marks.forEach((m, i) => {
+    const cat = catKey(m.category); if (!cats.has(cat)) return;
+    let [x1, y1, x2, y2] = m.box; if (e.swap) [x1, y1, x2, y2] = [y1, x1, y2, x2];
+    x1 *= W; x2 *= W; y1 *= H; y2 *= H;
+    const col = MARK_COLORS[cat];
+    c.fillStyle = col + "26"; c.fillRect(x1, y1, x2 - x1, y2 - y1);
+    c.strokeStyle = col; c.lineWidth = lw; c.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    const text = mode === "num" ? String(i + 1) : m.label;
+    const bh = Math.round(fs * 1.3), bw = Math.round(c.measureText(text).width + pad * 2);
+    const bx = Math.min(Math.max(0, x1), Math.max(0, W - bw));
+    let by = y1 - bh - 1; if (by < 0) by = y2 + 1;
+    for (let t = 0; t < 14 && placed.some(r => hit(r, {x: bx, y: by, w: bw, h: bh})); t++) by += bh + 1;   // push a crowded label down
+    if (by + bh > H) by = Math.max(0, H - bh);
+    placed.push({x: bx, y: by, w: bw, h: bh});
+    c.fillStyle = col; c.fillRect(bx, by, bw, bh);
+    c.fillStyle = "#fff"; c.fillText(text, bx + pad, by + bh / 2 + 1);
+  });
+}
+async function renderMarkedDataUrl(e){
+  const c = document.createElement("canvas");
+  drawMarked(c, await imgOf(e), e, "full", new Set(MARK_CATS));
+  return c.toDataURL("image/jpeg", .85);
+}
+const curMark = () => markEntries().find(x => x.name === markState.sel);
+
+function marksHtml(){
+  const loaded = state.sheets.map(s => s.name), entries = markEntries();
+  const names = [...new Set([...loaded, ...entries.map(e => e.name)])];
+  if (!names.length) return `<p class="empty">Add a drawing, then tap Read drawings. The app then draws a labelled box on every symbol of your image, for example "K1 Contactor NC". Marked images are saved with the report.</p>`;
+  if (!names.includes(markState.sel)) markState.sel = names[0];
+  const e = curMark(), canRun = loaded.includes(markState.sel);
+  return `<div class="markbar">
+      ${names.length > 1 ? `<select id="markSheet" aria-label="Sheet">${names.map(n => `<option value="${esc(n)}" ${n === markState.sel ? "selected" : ""}>${esc(n)}${entries.some(x => x.name === n) ? " ✓" : ""}</option>`).join("")}</select>` : ""}
+      <button class="btn primary small" id="markRun" type="button" ${canRun && !markState.busy ? "" : "disabled"}>${e ? "Mark again" : "Mark components"}</button>
+      ${markState.busy ? '<button class="btn small" id="markStop" type="button">Stop</button>' : ""}
+    </div>
+    <p id="markStatus" class="hint" style="margin:8px 0">${esc(markState.status)}</p>
+    ${markState.error ? `<div class="banner err" style="margin-bottom:10px">${esc(markState.error)}</div>` : ""}
+    ${!canRun && !e ? '<p class="empty">This drawing is no longer loaded. Add it again in Drawings to mark it.</p>' : ""}
+    <details class="markopt"><summary>Marking model (optional)</summary>
+      <input id="markModel" type="text" list="visionList" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(markModelId())}" placeholder="Same as the reading model">
+      <p class="hint" style="margin:6px 0 0">Position accuracy depends on the model. If boxes land in the wrong place, choose another vision model here (tap the box to see the list).</p>
+    </details>
+    ${e ? markViewer(e) : (canRun || markState.busy ? '<p class="empty">Not marked yet. Tap Mark components.</p>' : "")}`;
+}
+function markViewer(e){
+  const count = c => e.marks.filter(m => catKey(m.category) === c).length;
+  const cats = MARK_CATS.filter(c => count(c));
+  return `<div class="markctl">
+      <div class="seg">${[["full", "Labels"], ["num", "Numbers"]].map(([v, l]) => `<button type="button" data-markmode="${v}" aria-pressed="${markState.mode === v}">${l}</button>`).join("")}</div>
+      <div class="seg">${[1, 2, 3, 4].map(z => `<button type="button" data-markzoom="${z}" aria-pressed="${markState.zoom === z}">${z === 1 ? "Fit" : z + "×"}</button>`).join("")}</div>
+    </div>
+    <div class="catchips">${cats.map(c => `<button type="button" class="catchip" data-markcat="${c}" aria-pressed="${markState.cats.has(c)}"><i style="background:${MARK_COLORS[c]}"></i>${c} <b>${count(c)}</b></button>`).join("")}</div>
+    <div class="markscroll"><canvas id="markCanvas" role="img" aria-label="Drawing with labelled components"></canvas></div>
+    <div class="row" style="margin-top:8px"><button class="btn small" data-markdl type="button">Download image</button><button class="btn small" data-markswap type="button">Boxes in the wrong place? Swap X/Y</button></div>
+    <p class="hint">${e.marks.length} marks · marked by ${esc(shortModel(e.model))}. Positions come from the AI model and can be a little off, so check important symbols yourself.${e.partial ? " The model's list was cut off, so some symbols may be missing." : ""}${e.swap ? " X/Y are swapped." : ""}</p>
+    ${e.marks.length ? `<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Label</th><th>Tag</th><th>Type</th><th>Confidence</th></tr></thead><tbody>${e.marks.map((m, i) => `<tr><td class="mono">${i + 1}</td><td><i class="sw" style="background:${MARK_COLORS[catKey(m.category)]}"></i>${esc(m.label)}</td><td class="tag">${esc(m.tag)}</td><td>${esc(catKey(m.category))}</td><td>${conf(m.confidence)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="empty">No symbols were located. Try Mark again, or another marking model.</p>'}`;
+}
+async function renderMarks(){
+  const cv = $("#markCanvas"), e = curMark(); if (!cv || !e) return;
+  try { drawMarked(cv, await imgOf(e), e, markState.mode, markState.cats); cv.style.width = markState.zoom * 100 + "%"; }
+  catch { cv.replaceWith(Object.assign(document.createElement("p"), {className: "empty", textContent: "Couldn't show the marked image."})); }
+}
+async function markDownload(){
+  const e = curMark(); if (!e || !downloads) return;
+  try {
+    const c = document.createElement("canvas");
+    drawMarked(c, await imgOf(e), e, markState.mode, markState.cats);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", .9));
+    await downloads.save({filename: fileBase() + "-marked-" + (markEntries().indexOf(e) + 1) + ".jpg", data: blob});
+  } catch {}
+}
+$("#report").addEventListener("click", ev => {
+  const t = ev.target;
+  const mm = t.closest("[data-markmode]"); if (mm) { markState.mode = mm.dataset.markmode; mm.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === mm)); renderMarks(); return; }
+  const mz = t.closest("[data-markzoom]"); if (mz) { markState.zoom = Number(mz.dataset.markzoom); mz.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === mz)); const cv = $("#markCanvas"); if (cv) cv.style.width = markState.zoom * 100 + "%"; return; }
+  const mc = t.closest("[data-markcat]"); if (mc) { const c = mc.dataset.markcat; if (markState.cats.has(c)) markState.cats.delete(c); else markState.cats.add(c); mc.setAttribute("aria-pressed", markState.cats.has(c)); renderMarks(); return; }
+  if (t.closest("#markRun")) startMarking();
+  if (t.closest("#markStop")) markState.ctl?.abort();
+  if (t.closest("[data-markswap]")) { const e = curMark(); if (e) { e.swap = !e.swap; persistReport(state.report); renderTab(); } }
+  if (t.closest("[data-markdl]")) markDownload();
+});
+$("#report").addEventListener("change", ev => { if (ev.target.id === "markSheet") { markState.sel = ev.target.value; renderTab(); } });
+$("#report").addEventListener("input", ev => { if (ev.target.id === "markModel") store.set("rms-or-mark-model", ev.target.value.trim()); });
+
 /* ---------- Exports ---------- */
 function fileBase(){ return (state.report.sheet?.title || "schematic-report").replace(/[^\w\- ]+/g, "").trim().slice(0, 60) || "schematic-report"; }
 async function doExport(kind, btn){
@@ -1519,8 +1748,8 @@ async function doExport(kind, btn){
   const msg = $("#exMsg"); msg.textContent = "Preparing…"; btn.disabled = true;
   try {
     let data, name;
-    if (kind === "json") { data = JSON.stringify(state.report, null, 2); name = fileBase() + ".json"; }
-    if (kind === "html") { data = reportDoc(); name = fileBase() + ".html"; }
+    if (kind === "json") { data = JSON.stringify({...state.report, marked: arr(state.report.marked).map(({img, ...rest}) => rest)}, null, 2); name = fileBase() + ".json"; }
+    if (kind === "html") { const marked = []; for (const e of arr(state.report.marked)) marked.push({name: e.name, url: await renderMarkedDataUrl(e), marks: e.marks}); data = reportDoc(marked); name = fileBase() + ".html"; }
     if (kind === "xlsx") {
       if (!window.XLSX) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
       const r = state.report, wb = XLSX.utils.book_new();
@@ -1533,6 +1762,8 @@ async function doExport(kind, btn){
       add(r.findings.map(flat), "Findings");
       add(r.circuits.map(c => flat({name: c.name, description: c.description, sequence: arr(c.sequence)})), "Sequences");
       if (arr(r.sld?.feeders).length) add(r.sld.feeders.map(flat), "SLD feeders");
+      const mrows = arr(r.marked).flatMap(e => e.marks.map((m, i) => flat({sheet: e.name, n: i + 1, label: m.label, tag: m.tag, device: m.device, state: m.state, category: m.category, confidence: m.confidence})));
+      if (mrows.length) add(mrows, "Marks");
       add([...r.verify.map(v => ({type: "verify", item: v})), ...r.unreadable.map(v => ({type: "unreadable", item: v}))], "To verify");
       data = new Blob([XLSX.write(wb, {bookType: "xlsx", type: "array"})]); name = fileBase() + ".xlsx";
     }
@@ -1542,7 +1773,7 @@ async function doExport(kind, btn){
     msg.textContent = e?.code === "declined" ? "" : "Couldn't save the file.";
   } finally { btn.disabled = false; }
 }
-function reportDoc(){
+function reportDoc(marked = []){
   const r = state.report, s = r.sheet || {};
   const tbl = (cols, rows) => rows.length ? `<table><tr>${cols.map(c => `<th>${esc(c[1])}</th>`).join("")}</tr>${rows.map(x => `<tr>${cols.map(c => `<td>${esc(str(x[c[0]]))}</td>`).join("")}</tr>`).join("")}</table>` : "<p>None.</p>";
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(s.title || "Schematic report")}</title>
@@ -1556,6 +1787,7 @@ function reportDoc(){
 <h2>Safety functions</h2>${tbl([["name","Function"],["input_devices","Input"],["logic","Logic"],["output_devices","Output"],["channels","Channels"],["edm","EDM"],["cross_fault_detection","Cross-fault"],["reset","Reset"],["stop_category","Stop cat."],["suggested_category","Suggested cat."],["likely_pl","Likely PL"],["rationale","Rationale"]], r.safety_functions)}
 <h2>Findings</h2>${tbl([["severity","Severity"],["title","Finding"],["detail","Detail"],["reference","Reference"],["recommendation","Recommendation"],["standard","Standard"],["confidence","Confidence"]], [...r.findings].sort((a, b) => SEV.indexOf(sevKey(a.severity)) - SEV.indexOf(sevKey(b.severity))))}
 ${arr(r.sld?.feeders).length ? `<h2>Single-line diagram</h2><p>${esc([r.sld.supply, r.sld.incomer, r.sld.busbar, r.sld.earthing].filter(Boolean).join(" · "))}</p>${tbl([["tag","Tag"],["device","Device"],["rating","Rating"],["cable","Cable"],["load","Load"]], r.sld.feeders)}` : ""}
+${marked.length ? `<h2>Marked drawings</h2>${marked.map(m => `<h3>${esc(m.name)}</h3><img src="${m.url}" alt="Marked drawing" style="max-width:100%;border:1px solid #cfd6d0">${tbl([["label","Label"],["tag","Tag"],["device","Device"],["state","State"],["category","Type"],["confidence","Confidence"]], m.marks)}`).join("")}` : ""}
 <h2>To verify</h2><ul>${r.verify.map(v => `<li>${esc(v)}</li>`).join("")}</ul>
 ${r.unreadable.length ? `<h2>Could not read reliably</h2><ul>${r.unreadable.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : ""}
 </body></html>`;
@@ -1587,6 +1819,8 @@ $("#hist").addEventListener("click", async e => {
     const x = d.data();
     state.report = normalize(JSON.parse(JSON.stringify(x.report)));
     state.report.meta = x.report.meta; state.report.note = x.report.note;
+    state.report.marked = arr(x.report.marked).map(e => ({...e, marks: arr(e.marks).map(m => ({...m}))}));
+    hidden(state.report, "_id", id); hidden(state.report, "_thumb", x.thumb || "");
     state.isExample = false; state.imgSets = []; state.chat = []; state.tab = "overview";
     state.explains = {}; state.explainTag = null; state.quiz = null;
     renderReport();
@@ -1598,14 +1832,21 @@ $("#hist").addEventListener("click", async e => {
     try { await db.doc("reports/" + id).delete(); } catch { showErr("Couldn't delete that report. Try again."); b.disabled = false; }
   }
 });
-async function saveHistory(rep, sheet){
-  if (!db) return;
+let persistQ = Promise.resolve();
+function persistReport(rep){ persistQ = persistQ.then(() => doPersist(rep)).catch(() => {}); return persistQ; }
+async function doPersist(rep){
+  if (!db || !rep || rep === EXAMPLE) return;
   const doc = {title: rep.sheet?.title || rep.meta?.sheets?.[0] || "Drawing", createdAt: rep.meta?.createdAt || Date.now(),
-    findings: rep.findings.length, model: rep.meta?.model || "", thumb: sheet ? thumbOf(sheet.canvas, 120, .6) : "", report: rep};
-  if (JSON.stringify(doc).length > 250000) { doc.report = {...rep, connections: rep.connections.slice(0, 60)}; doc.report.note = (rep.note ? rep.note + " " : "") + "Saved copy keeps the first 60 connections."; }
-  if (JSON.stringify(doc).length > 250000) { showErr("This report is too large to save. Download it as Excel or JSON instead."); return; }
-  try { await db.collection("reports").add(doc); }
-  catch (e) { showErr(e?.code === "quota_exceeded" ? "Saved reports are full. Delete some old ones." : "Couldn't save this report to your history."); }
+    findings: rep.findings.length, model: rep.meta?.model || "", thumb: rep._thumb || "", report: rep};
+  try {
+    if (rep._id) await db.doc("reports/" + rep._id).set(doc);
+    else { const ref = await db.collection("reports").add(doc); rep._id = ref.id; }
+  } catch { showErr("Couldn't save this report to your history. Your browser may be out of storage."); }
+}
+const hidden = (o, k, v) => Object.defineProperty(o, k, {value: v, writable: true, enumerable: false, configurable: true});
+function saveHistory(rep, sheet){
+  hidden(rep, "_thumb", sheet ? thumbOf(sheet.canvas, 120, .6) : ""); hidden(rep, "_id", "");
+  return persistReport(rep);
 }
 
 renderSheets();

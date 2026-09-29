@@ -10,6 +10,16 @@ A single-page web app that reads electrical drawings: IEC and NEMA/JIC control c
   - The model list is loaded live from OpenRouter (vision models only). Compare two or three models on the same sheet: each saved report records which model read it.
   - Give the key a monthly spending limit in OpenRouter.
 
+## Marked drawing (docs version)
+
+After reading a sheet, the app sends the full image to the vision model once more and asks it to box every symbol with a short label such as `K1 Contactor NC`, `M1 Motor 3~` or `S1 E-stop NC`. The **Marked drawing** tab draws the boxes on your image.
+
+- Labels or numbers view, zoom 1–4×, filter by type (power, control, safety, load, signal), download as JPEG.
+- Boxes come back as 0–1000 coordinates and are stored as fractions, so they scale with the image. **Swap X/Y** fixes models that answer in y,x order.
+- An optional marking model (Setup is not needed) can differ from the reading model, because pointing accuracy varies by model.
+- The image (max 1600 px) and marks are saved with the report, so a marked drawing can be reopened later. Marks are also included in the Excel and HTML exports.
+- Turn off "Mark components on the drawing after reading" in Settings to skip the extra call.
+
 ## Learn mode
 
 - **Explain** on any component: Claude teaches that device, covering its symbol in IEC and NEMA, its terminal numbers, its role in this circuit and its failure modes.
