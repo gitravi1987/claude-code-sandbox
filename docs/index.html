@@ -215,7 +215,7 @@ ul.plain{margin:0;padding-left:18px;font-size:13.5px}
 #printRoot{display:none}
 .lg-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
 .lg-list{display:flex;flex-direction:column;gap:8px}
-.lg-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:12px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface)}
+.lg-row{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:12px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface)}
 .lg-img{width:96px;height:80px;border:1px solid var(--line);border-radius:6px;background:#fff;display:grid;place-items:center;overflow:hidden}
 .lg-img img{max-width:100%;max-height:100%;display:block}
 .lg-name{font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -227,7 +227,18 @@ ul.plain{margin:0;padding-left:18px;font-size:13.5px}
 .lg-count b{display:block;font:700 22px/1 var(--f-display)}
 .lg-count span{font-size:11px;color:var(--muted)}
 .lg-ai{font:700 9.5px/1 var(--f-mono);border:1px solid var(--line);border-radius:4px;padding:2px 4px;color:var(--muted)}
-@media (max-width:520px){.lg-row{grid-template-columns:76px minmax(0,1fr) auto;gap:10px}.lg-img{width:76px;height:64px}}
+.sypair{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sypair figure{margin:0;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);padding:4px;text-align:center}
+.sypair svg{width:100%;height:56px;display:block;color:var(--ink)}
+.sypair figcaption{font:500 10px var(--f-mono);color:var(--muted)}
+.syimg{display:block}
+.sy-d{font-size:12px;margin:6px 0 2px}
+.sy-n{font-size:11.5px;color:var(--muted);margin:2px 0}
+.sy-r{font:500 11px var(--f-mono);color:var(--muted);margin:2px 0 0}
+.lg-cap{font:500 10px var(--f-mono);color:var(--muted)}
+.lg-desig{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:12.5px;margin:2px 0}
+.lg-ref{font:500 11px var(--f-mono);color:var(--muted);margin:0 0 6px}
+@media (max-width:520px){.lg-row{grid-template-columns:minmax(0,1fr) auto;gap:10px}.lg-sym{grid-column:1/-1}.lg-img{width:76px;height:64px}}
 #sumOut{width:100%;min-height:140px;margin-top:8px;font:12.5px/1.4 var(--f-mono)}
 @media print{
   @page{size:A4;margin:14mm 12mm}
@@ -427,7 +438,7 @@ SINGLE-LINE DIAGRAMS: supply (transformer kVA, voltage, vector group), incomer (
 SAFETY REVIEW GUIDANCE (advisory; ISO 13849-1, IEC 62061, IEC 60204-1, ISO 13850, ISO 14119, IEC 61496, ISO/TR 24119, ANSI B11.19 / B11.26, NFPA 79)
 For each safety function (E-stop, guard interlock, light curtain, two-hand control, enabling device, safe speed, muting...) trace input device(s) -> logic (safety relay / safety PLC / standard relay / standard PLC) -> output devices (contactors, valves, drive STO).
 Check: number of channels at input, logic and output; feedback / EDM of output contactors (NC mirror contacts in the feedback loop); cross-fault / short-circuit detection (test pulses, channels at different potentials); reset type (automatic, manual, monitored manual) and reset location; stop category 0/1/2 (off-delay outputs, timers); reliance on a standard PLC or standard relays in the safety path; series-connected interlock switches (fault masking, ISO/TR 24119); common-cause weaknesses (both channels via one contact, cable, fuse or single contactor); positive-opening contacts on safety inputs; non-safety devices in the safety path; bypass, jumper, muting or maintenance override; whether the stop removes all hazardous energy (pneumatic / hydraulic valves, drive STO); restart prevention after power loss; lockable main disconnect for LOTO.
-Suggesting an ISO 13849-1 category: B/1 = single channel, no monitoring; 2 = single channel with periodic test; 3 = dual channel, single-fault tolerant, most faults detected (typical safety relay with dual inputs and EDM); 4 = dual channel with cross-fault detection, fault accumulation considered. PL also depends on MTTFd, DCavg and CCF, so never state a PL as certain from a drawing: give the likely range and name the missing data (B10D values, operations per year).`;
+Suggesting a category and PL (ISO 13849-1): Category B = single channel, no monitoring (PLb at most). Category 1 = single channel with well-tried components (PLc at most). Category 2 = single channel with a periodic test by the logic (PLd at most). Category 3 = dual channel, single-fault tolerant, most faults detected, for example a safety relay with dual inputs and EDM (PLd at most). Category 4 = dual channel with cross-fault detection so faults do not accumulate (the only category that can reach PLe, and then only with DCavg of at least 99% and high MTTFd). The achieved PL also depends on MTTFd, DCavg and CCF (common cause failure score of at least 65). The required level PLr comes from the risk assessment, which a drawing does not show, so say that PLr is unknown. Never state a PL as certain from a drawing: give the likely maximum, say what caps it, and name the missing data (B10d values, operations per year, DCavg, CCF, test rate).`;
 
 const SCHEMA = `{
  "sheet": {"title": "", "drawing_no": "", "sheet_no": "", "revision": "", "standard_detected": "IEC | NEMA/JIC | Mixed | Unknown", "drawing_type": "control | safety | power | SLD | PLC I/O | mixed", "image_quality": "good | fair | poor", "notes": ""},
@@ -435,7 +446,7 @@ const SCHEMA = `{
  "components": [{"tag": "-K1", "type": "Safety relay", "symbol": "what the symbol looks like / symbol standard", "function": "what it does in this circuit", "ratings": "e.g. 24VDC, 3kW, 10A", "location": "sheet/column or rung", "safety_related": true, "confidence": "high | medium | low"}],
  "connections": [{"from": "-S1:12", "to": "-K1:S12", "wire": "wire no. or colour", "via": "terminal, cable or contact in between", "signal": "e.g. E-stop channel 1", "confidence": "high | medium | low"}],
  "circuits": [{"name": "e.g. Motor M1 start/stop", "description": "", "sequence": ["step 1", "step 2"]}],
- "safety_functions": [{"name": "", "input_devices": "", "logic": "", "output_devices": "", "channels": "single | dual | unclear", "edm": "yes | no | unclear", "cross_fault_detection": "yes | no | unclear", "reset": "automatic | manual | monitored manual | unclear", "stop_category": "0 | 1 | 2 | unclear", "suggested_category": "B | 1 | 2 | 3 | 4 | unclear", "likely_pl": "e.g. PLc-PLd | unclear", "rationale": ""}],
+ "safety_functions": [{"name": "", "input_devices": "", "logic": "", "output_devices": "", "channels": "single | dual | unclear", "edm": "yes | no | unclear", "cross_fault_detection": "yes | no | unclear", "reset": "automatic | manual | monitored manual | unclear", "stop_category": "0 | 1 | 2 | unclear", "suggested_category": "B | 1 | 2 | 3 | 4 | unclear", "likely_pl": "likely maximum, e.g. PLd | unclear", "rationale": "2-3 sentences: why this category, what caps the PL (for example no cross-fault detection means no Category 4 and so no PLe), and what data is missing"}],
  "findings": [{"severity": "critical | major | minor | info", "title": "", "detail": "", "reference": "tags / terminals / location", "recommendation": "", "standard": "clause if relevant", "confidence": "high | medium | low"}],
  "sld": {"present": false, "supply": "", "incomer": "", "busbar": "", "earthing": "", "feeders": [{"tag": "", "device": "", "rating": "", "cable": "", "load": ""}], "notes": ""},
  "cross_references": [{"ref": "/5.3", "meaning": ""}],
@@ -475,8 +486,8 @@ const EXAMPLE = {
   ],
   circuits:[{name:"Safety relay start-up",description:"How the machine becomes ready to run.",sequence:["E-stop released and guard closed: S11-S12 and S21-S22 closed.","Operator presses -S2; the relay checks that Q1 and Q2 NC contacts are closed.","-K1 outputs 13-14 and 23-24 close; Q1 and Q2 pull in.","Opening the guard or pressing the E-stop drops both outputs immediately (stop category 0)."]}],
   safety_functions:[
-    {name:"Emergency stop",input_devices:"-S1 (2 NC)",logic:"-K1 safety relay",output_devices:"-Q1, -Q2 in series",channels:"dual",edm:"yes",cross_fault_detection:"unclear",reset:"monitored manual",stop_category:"0",suggested_category:"3",likely_pl:"PLd (data needed)",rationale:"Dual channel input and outputs with EDM. Cross-fault detection depends on relay type."},
-    {name:"Guard door interlock",input_devices:"-B1 (1 NC)",logic:"-K1 safety relay",output_devices:"-Q1, -Q2",channels:"single",edm:"yes",cross_fault_detection:"no",reset:"monitored manual",stop_category:"0",suggested_category:"1",likely_pl:"PLc at most",rationale:"The single guard contact sits in channel 1 only, so one fault can defeat the function."}
+    {name:"Emergency stop",input_devices:"-S1 (2 NC)",logic:"-K1 safety relay",output_devices:"-Q1, -Q2 in series",channels:"dual",edm:"yes",cross_fault_detection:"unclear",reset:"monitored manual",stop_category:"0",suggested_category:"3",likely_pl:"PLd (data needed)",rationale:"Dual channel input and outputs with contactor feedback (EDM) fits Category 3. Category 3 tops out at PLd. PLe would need Category 4: cross-fault detection and DCavg of at least 99%, with high MTTFd. Cross-fault detection depends on the relay type, which the drawing does not show."},
+    {name:"Guard door interlock",input_devices:"-B1 (1 NC)",logic:"-K1 safety relay",output_devices:"-Q1, -Q2",channels:"single",edm:"yes",cross_fault_detection:"no",reset:"monitored manual",stop_category:"0",suggested_category:"1",likely_pl:"PLc at most",rationale:"The single guard contact sits in channel 1 only, so one fault can defeat the function. That limits it to Category 1 (PLc at most) however good the relay is."}
   ],
   findings:[
     {severity:"major",title:"Guard switch is single channel",detail:"-B1 has one NC contact in series with E-stop channel 1. A welded contact or a short across -B1 goes undetected.",reference:"-B1:11-12, -K1:S11-S12",recommendation:"Use a 2-NC interlock (or coded/RFID switch) wired to both channels.",standard:"ISO 13849-1 cl. 6.2.6; ISO 14119",confidence:"high"},
@@ -1189,7 +1200,7 @@ function renderTab(){
   if (state.tab === "verify") p.innerHTML = verifyHtml(r);
   if (state.tab === "marks") { p.innerHTML = marksHtml(); renderMarks(); }
   if (state.tab === "legend") p.innerHTML = legendHtml();
-  if (state.tab === "learn") { p.innerHTML = learnHtml(); renderQuiz(); renderProgress(); }
+  if (state.tab === "learn") { p.innerHTML = learnHtml(); renderQuiz(); renderProgress(); renderSymGrid(); }
   if (state.tab === "chat") { p.innerHTML = chatHtml(); bindChat(); }
 }
 function overviewHtml(r){
@@ -1236,13 +1247,13 @@ function chipYN(label, v){
 }
 function safetyHtml(r){
   const sorted = [...r.findings].sort((a, b) => SEV.indexOf(sevKey(a.severity)) - SEV.indexOf(sevKey(b.severity)));
-  return `<div class="disclaimer">Advisory review from the drawing only. Categories and PL ranges are suggestions: confirm with the actual devices, B10D/MTTFd data and a site inspection before relying on them.</div>
+  return `<div class="disclaimer">Advisory review from the drawing only. The category and PL are estimates made by the AI model from the circuit structure; they are not calculated. The required level (PLr) comes from your risk assessment. Confirm with the actual devices, B10d/MTTFd/DCavg data (for example in SISTEMA) and a site inspection before relying on them.</div>
     <h3 class="sec">Safety functions</h3>
     ${r.safety_functions.length ? `<div class="sf-grid">${r.safety_functions.map(sf => `
       <div class="sf"><h4>${esc(sf.name)}</h4>
         <div class="chain"><div><span>Input</span><span>${esc(sf.input_devices)}</span></div><div><span>Logic</span><span>${esc(sf.logic)}</span></div><div><span>Output</span><span>${esc(sf.output_devices)}</span></div></div>
         <div class="chips">${chipYN("Channels", sf.channels)}${chipYN("EDM", sf.edm)}${chipYN("Cross-fault", sf.cross_fault_detection)}${chipYN("Reset", sf.reset)}<span class="pill n">Stop cat. ${esc(sf.stop_category || "unclear")}</span></div>
-        <div class="catbox"><span class="big">Cat ${esc(sf.suggested_category || "?")}</span><span>${esc(sf.likely_pl || "")}<br><span class="empty">suggested</span></span></div>
+        <div class="catbox"><span class="big">Cat ${esc(sf.suggested_category || "?")}</span><span>${esc(sf.likely_pl || "")}<br><span class="empty">estimate</span></span></div>
         ${sf.rationale ? `<p style="margin:0;font-size:13px">${esc(sf.rationale)}</p>` : ""}
       </div>`).join("")}</div>` : '<p class="empty">No safety functions found on this drawing.</p>'}
     <h3 class="sec">Findings</h3>
@@ -1334,10 +1345,7 @@ function learnHtml(){
       </ol>
     </section>
   </div>
-  <h3 class="sec">Symbol guide: IEC vs NEMA / JIC</h3>
-  <p class="hint" style="margin:-4px 0 10px">Simplified sketches of common forms. Makers vary, so always check the drawing's own legend sheet.</p>
-  <div class="syms">${SYMBOLS.map(s => `<div class="sym"><h4>${esc(s.name)}</h4><div class="pair">
-    <figure>${svg(s.iec)}<figcaption>IEC</figcaption></figure><figure>${svg(s.nema)}<figcaption>NEMA / JIC</figcaption></figure></div><p>${esc(s.note)}</p></div>`).join("")}</div>
+  ${libraryHtml()}
   <h3 class="sec">Terminal numbers</h3>
   <div class="tbl-wrap"><table><thead><tr><th>Marking</th><th>Meaning</th></tr></thead><tbody>
     ${TERMINALS.map(([k, v]) => `<tr><td class="tag">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</tbody></table></div>
@@ -1347,28 +1355,6 @@ function learnHtml(){
 }
 const svg = inner => `<svg viewBox="0 0 80 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 const T = (x, y, s, size = 11) => `<text x="${x}" y="${y}" fill="currentColor" stroke="none" font-size="${size}" font-family="IBM Plex Mono, monospace" text-anchor="middle">${s}</text>`;
-const SYMBOLS = [
-  {name: "Normally open (NO) contact", note: "Open at rest, closes when operated. IEC terminals x3-x4 (e.g. 13-14).",
-    iec: `<path d="M40 4V20M40 40V56M40 40L29 21"/>`, nema: `<path d="M4 30H32M48 30H76M32 17V43M48 17V43"/>`},
-  {name: "Normally closed (NC) contact", note: "Closed at rest, opens when operated. IEC terminals x1-x2 (e.g. 21-22).",
-    iec: `<path d="M40 4V20H50M40 40V56M40 40L53 17"/>`, nema: `<path d="M4 30H32M48 30H76M32 17V43M48 17V43M25 45L55 15"/>`},
-  {name: "Relay / contactor coil", note: "IEC coil terminals A1 (+) and A2 (-). NEMA labels the circle CR, M or TR.",
-    iec: `<path d="M40 4V18M40 42V56"/><rect x="28" y="18" width="24" height="24"/>`, nema: `<path d="M4 30H28M52 30H76"/><circle cx="40" cy="30" r="12"/>${T(40, 34, "CR", 10)}`},
-  {name: "Push button, NO (start)", note: "Spring return. Dashed line = mechanical link to the actuator.",
-    iec: `<path d="M44 4V20M44 40V56M44 40L33 21"/><path d="M38 31H18" stroke-dasharray="3 3"/><path d="M12 24H18V38H12"/>`, nema: `<path d="M4 38H27M53 38H76"/><circle cx="30" cy="38" r="3"/><circle cx="50" cy="38" r="3"/><path d="M26 30H54M40 30V14M34 14H46"/>`},
-  {name: "Emergency stop (NC, latching)", note: "Mushroom head, NC contacts with positive (direct) opening. Terminals often 11-12, 21-22.",
-    iec: `<path d="M46 4V20H56M46 40V56M46 40L59 17"/><path d="M50 29H22" stroke-dasharray="3 3"/><path d="M22 20A9 9 0 0 0 22 38Z"/>`, nema: `<path d="M4 26H27M53 26H76"/><circle cx="30" cy="26" r="3"/><circle cx="50" cy="26" r="3"/><path d="M26 34H54M40 34V12M29 12A11 8 0 0 1 51 12Z"/>`},
-  {name: "Circuit breaker", note: "IEC: switch with × at the fixed contact. NEMA: arc between the terminals.",
-    iec: `<path d="M40 4V20M40 40V56M40 40L29 21M35 15L45 25M45 15L35 25"/>`, nema: `<path d="M4 34H25M55 34H76"/><circle cx="28" cy="34" r="3"/><circle cx="52" cy="34" r="3"/><path d="M28 29Q40 12 52 29"/>`},
-  {name: "Fuse", note: "IEC tag F / FA; NEMA tag FU. Both commonly drawn as a box with the line through it.",
-    iec: `<path d="M40 4V56"/><rect x="33" y="14" width="14" height="32"/>`, nema: `<path d="M4 30H76"/><rect x="26" y="23" width="28" height="14"/>`},
-  {name: "Motor (3-phase)", note: "IEC M 3~ with U V W (or U1 V1 W1). NEMA leads T1 T2 T3.",
-    iec: `<path d="M30 4V16M40 4V16M50 4V16"/><circle cx="40" cy="36" r="17"/>${T(40, 36, "M", 13)}${T(40, 48, "3~", 10)}`, nema: `<path d="M4 18H24M4 30H23M4 42H24"/><circle cx="42" cy="30" r="17"/>${T(42, 34, "MTR", 10)}`},
-  {name: "Indicator lamp", note: "IEC: circle with a cross, tag P/PF (old H). NEMA: circle with rays, letter = colour (R, G, A).",
-    iec: `<path d="M40 4V20M40 40V56"/><circle cx="40" cy="30" r="10"/><path d="M33 23L47 37M47 23L33 37"/>`, nema: `<path d="M4 30H30M50 30H76"/><circle cx="40" cy="30" r="10"/><path d="M40 14V10M40 46V50M29 19L26 16M51 19L54 16"/>${T(40, 34, "R", 10)}`},
-  {name: "Transformer", note: "Control transformers step 415 V down to 230/110/24 V. Check the VA rating.",
-    iec: `<path d="M40 4V12M40 48V56"/><circle cx="40" cy="23" r="11"/><circle cx="40" cy="37" r="11"/>`, nema: `<path d="M22 6V14A5 5 0 0 1 22 24A5 5 0 0 1 22 34A5 5 0 0 1 22 44V54M58 6V14A5 5 0 0 0 58 24A5 5 0 0 0 58 34A5 5 0 0 0 58 44V54M37 12V48M43 12V48"/>`}
-];
 const TERMINALS = [
   ["13-14, 23-24, 33-34", "NO auxiliary contacts (first digit = position, 3-4 = NO)"],
   ["11-12, 21-22, 31-32", "NC auxiliary contacts (1-2 = NC)"],
@@ -1772,6 +1758,205 @@ $("#report").addEventListener("click", ev => {
 $("#report").addEventListener("change", ev => { if (ev.target.id === "markSheet") { markState.sel = ev.target.value; renderTab(); } });
 $("#report").addEventListener("input", ev => { if (ev.target.id === "markModel") store.set("rms-or-mark-model", ev.target.value.trim()); });
 
+/* ---------- Symbol library: 50 clean reference symbols, IEC and NEMA / JIC side by side ---------- */
+const P = d => `<path d="${d}"/>`;
+const DSH = d => `<path d="${d}" stroke-dasharray="3 3"/>`;
+const CI = (x, y, r, fill) => `<circle cx="${x}" cy="${y}" r="${r}"${fill ? ' fill="currentColor"' : ""}/>`;
+const RC = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}"/>`;
+const vNO = x => `M${x} 4V20M${x} 40V56M${x} 40L${x - 11} 21`;                       // IEC contact, vertical
+const vNC = x => `M${x} 4V20H${x - 11}M${x} 40V56M${x} 40L${x - 10} 20`;
+const hNOs = (y, h) => `M4 ${y}H32M48 ${y}H76M32 ${y - h}V${y + h}M48 ${y - h}V${y + h}`;   // NEMA contact, horizontal
+const hNCs = (y, h) => hNOs(y, h) + `M26 ${y + h + 2}L54 ${y - h - 2}`;
+const N_STD = "IEEE 315 / ANSI Y32.2";
+const GROUPS = ["Contacts & coils", "Protection & isolation", "Motors, drives & supplies", "Passive & semiconductors", "Distribution & metering", "Operator, sensing & control", "Safety devices"];
+const S = (id, grp, name, iec, nema, d, desc, std, extra = {}) => ({id, grp, name, iec, nema, d, desc, std, ...extra});
+
+const SYMLIB = [
+  // ---- Contacts & coils ----
+  S("no", "Contacts & coils", "NO contact", P(vNO(40)), P(hNOs(30, 13)), ["x3-x4 (13-14, 23-24) on the parent device", "NO contact of CR, M, TR…"],
+    "Open at rest; closes when its coil or actuator operates.", ["IEC 60617-7", N_STD], {generic: true}),
+  S("nc", "Contacts & coils", "NC contact", P(vNC(40)), P(hNCs(30, 13)), ["x1-x2 (11-12, 21-22) on the parent device", "NC contact (slash) of CR, M, TR…"],
+    "Closed at rest; opens when its coil or actuator operates.", ["IEC 60617-7", N_STD], {generic: true}),
+  S("changeover", "Contacts & coils", "Changeover contact (SPDT)", P(`M40 56V44M40 44L33 20M26 4V20H34M56 4V20`),
+    P(`M4 30H12M12 16V44M12 16H32M48 16H76M32 8V24M48 8V24M26 26L54 6M12 44H32M48 44H76M32 36V52M48 36V52`),
+    ["x1-x2-x4 (11-12-14)", "Form C: NC + NO sharing one terminal"], "One common terminal that switches between an NC path and an NO path.", ["IEC 60617-7", N_STD]),
+  S("contactor_main", "Contacts & coils", "Contactor main contacts (3-pole)", P(vNO(20) + vNO(40) + vNO(60)) + DSH("M14.5 30.5H54.5"),
+    P(hNOs(12, 5) + hNOs(30, 5) + hNOs(48, 5)) + DSH("M40 7V53"), ["Q / QA / KM (1-2, 3-4, 5-6)", "M (starter) / C (contactor)"],
+    "Three power poles, mechanically linked, that switch a motor or load supply when the coil is energised.", ["IEC 60617-7", N_STD]),
+  S("contactor_coil", "Contacts & coils", "Contactor coil", P("M40 4V18M40 42V56") + RC(26, 18, 28, 24) + T(40, 34, "KM", 10),
+    P("M4 30H28M52 30H76") + CI(40, 30, 12) + T(40, 34, "M", 11), ["Q / QA / KM (A1-A2)", "M (coil)"],
+    "Electromagnet that pulls in the contactor's main and auxiliary contacts when energised.", ["IEC 60617-7", N_STD]),
+  S("relay_coil", "Contacts & coils", "Control relay coil", P("M40 4V18M40 42V56") + RC(26, 18, 28, 24) + T(40, 34, "K", 11),
+    P("M4 30H28M52 30H76") + CI(40, 30, 12) + T(40, 34, "CR", 10), ["K / KA (A1-A2)", "CR"],
+    "Coil of a control or interposing relay; energising it operates the relay's contacts.", ["IEC 60617-7", N_STD]),
+  // ---- Protection & isolation ----
+  S("mcb1", "Protection & isolation", "MCB / circuit breaker (1-pole)", P(vNO(40) + "M35 14L45 24M45 14L35 24"),
+    P("M4 34H25M55 34H76M28 31Q40 10 52 31") + CI(28, 34, 3) + CI(52, 34, 3), ["Q / QA (F in older drawings)", "CB"],
+    "Protects a circuit against overload and short circuit and doubles as a manual switch.", ["IEC 60617-7", N_STD]),
+  S("mcb3", "Protection & isolation", "MCB / circuit breaker (3-pole)", P(vNO(20) + vNO(40) + vNO(60) + "M15 14L25 24M25 14L15 24M35 14L45 24M45 14L35 24M55 14L65 24M65 14L55 24") + DSH("M14.5 30.5H54.5"),
+    P("M4 16H24M56 16H76M4 34H24M56 34H76M4 52H24M56 52H76M26 13.5Q40 3 54 13.5M26 31.5Q40 21 54 31.5M26 49.5Q40 39 54 49.5") + CI(26, 16, 2.5) + CI(54, 16, 2.5) + CI(26, 34, 2.5) + CI(54, 34, 2.5) + CI(26, 52, 2.5) + CI(54, 52, 2.5) + DSH("M40 8V56"),
+    ["Q / QA (F in older drawings)", "CB"], "Three-pole breaker for a three-phase supply; the poles trip together.", ["IEC 60617-7", N_STD]),
+  S("fuse", "Protection & isolation", "Fuse", P("M40 4V56") + RC(33, 14, 14, 32), P("M4 30H22C28 16 34 16 40 30C46 44 52 44 58 30H76"), ["F / FA (FU)", "FU"],
+    "Sacrificial protective device that melts and opens the circuit on overcurrent.", ["IEC 60617-7", N_STD]),
+  S("isolator", "Protection & isolation", "Isolator / disconnect switch", P("M40 4V20M40 40V56M40 40L29 21M25 24L33 19"), P("M4 30H22M22 30L52 15M56 30H76") + CI(22, 30, 2.5), ["Q / QB (S in older drawings)", "DISC / DS"],
+    "Manual switch that isolates the supply for maintenance; lockable for LOTO.", ["IEC 60617-7", N_STD]),
+  S("overload", "Protection & isolation", "Thermal overload relay", P("M40 4V16M40 44V56") + RC(26, 16, 28, 28) + P("M33 35V27H47V35"), P("M4 30H18L22 20L30 40L38 20L46 40L54 20L58 30H76"), ["F / FA / FR (95-96, 97-98)", "OL"],
+    "Protects a motor from overload; its NC trip contact (95-96) opens when the motor draws too much current.", ["IEC 60617-7", N_STD]),
+  // ---- Motors, drives & supplies ----
+  S("motor3", "Motors, drives & supplies", "Motor, 3-phase", P("M30 4V22.3M40 4V19M50 4V22.3") + CI(40, 36, 17) + T(40, 35, "M", 13) + T(40, 47, "3~", 9),
+    P("M4 18H30M4 30H25M4 42H30") + CI(42, 30, 17) + T(42, 34, "MTR", 10), ["M / MA (U-V-W)", "MTR / M (T1-T2-T3)"],
+    "Three-phase induction motor that drives the load.", ["IEC 60617-6", N_STD]),
+  S("dc_motor", "Motors, drives & supplies", "Motor, DC", P("M40 4V14M40 46V56") + CI(40, 30, 16) + T(40, 28, "M", 12) + P("M33 36H47") + DSH("M33 40H47"),
+    P("M4 24H29M4 36H29") + CI(42, 30, 14) + T(42, 34, "MTR", 10), ["M / MA (A1-A2)", "MTR (A1-A2, F1-F2)"],
+    "Direct-current motor with armature (and field) terminals.", ["IEC 60617-6", N_STD]),
+  S("vfd", "Motors, drives & supplies", "Variable frequency drive", P("M26 4V16M40 4V16M54 4V16M26 44V56M40 44V56M54 44V56") + RC(14, 16, 52, 28) + P("M14 44L66 16") + T(26, 32, "~", 13) + T(54, 40, "~", 13),
+    P("M4 22H14M4 30H14M4 38H14M66 22H76M66 30H76M66 38H76") + RC(14, 12, 52, 36) + T(40, 35, "VFD", 12), ["T / A / U (varies); L1-L2-L3 in, U-V-W out", "VFD / DR / INV"],
+    "Converts the fixed AC supply into variable frequency and voltage to control motor speed and torque.", ["IEC 60617-6", N_STD]),
+  S("transformer", "Motors, drives & supplies", "Transformer (2 windings)", P("M40 4V12M40 48V56") + CI(40, 23, 11) + CI(40, 37, 11),
+    P("M24 4V12A6 6 0 0 1 24 24A6 6 0 0 1 24 36A6 6 0 0 1 24 48V56M56 4V12A6 6 0 0 0 56 24A6 6 0 0 0 56 36A6 6 0 0 0 56 48V56M38 10V50M42 10V50"), ["T / TA", "T / XFMR (H1-H4, X1-X2)"],
+    "Steps the supply voltage up or down, for example 415 V to 230 V or 24 V for control circuits.", ["IEC 60617-6", N_STD]),
+  S("psu", "Motors, drives & supplies", "Power supply (AC to DC)", P("M32 4V14M48 4V14M32 46V56M48 46V56") + RC(16, 14, 48, 32) + P("M16 46L64 14") + T(28, 30, "~", 12) + T(52, 42, "=", 13),
+    P("M4 24H16M4 36H16M64 24H76M64 36H76") + RC(16, 14, 48, 32) + P("M16 46L64 14") + T(28, 30, "~", 12) + T(52, 42, "=", 13), ["G / T (PSU)", "PS / PSU"],
+    "Converts the AC supply into regulated DC (typically 24 V DC) for control devices.", ["IEC 60617-6", N_STD], {note: "Drawn the same in both standards."}),
+  // ---- Passive & semiconductors ----
+  S("resistor", "Passive & semiconductors", "Resistor", P("M40 4V14M40 46V56") + RC(34, 14, 12, 32), P("M4 30H18L22 20L30 40L38 20L46 40L54 20L58 30H76"), ["R", "R"],
+    "Limits current or drops voltage; as a braking resistor it absorbs the drive's regenerative energy.", ["IEC 60617-4", N_STD]),
+  S("capacitor", "Passive & semiconductors", "Capacitor", P("M40 4V26M28 26H52M28 34H52M40 34V56"), P("M4 30H34M34 16V44M46 16Q40 30 46 44M46 30H76"), ["C", "C"],
+    "Stores charge; used for filtering, smoothing or power-factor correction.", ["IEC 60617-4", N_STD]),
+  S("inductor", "Passive & semiconductors", "Inductor / choke", P("M4 30H16A6 6 0 0 1 28 30A6 6 0 0 1 40 30A6 6 0 0 1 52 30A6 6 0 0 1 64 30H76"),
+    P("M4 30H16A6 6 0 0 1 28 30A6 6 0 0 1 40 30A6 6 0 0 1 52 30A6 6 0 0 1 64 30H76"), ["L", "L"],
+    "Coil that stores energy in a magnetic field; smooths current or filters drive harmonics.", ["IEC 60617-4", N_STD], {note: "Drawn the same in both standards."}),
+  S("diode", "Passive & semiconductors", "Diode", P("M40 4V18M30 18H50L40 36ZM30 36H50M40 36V56"), P("M4 30H26M26 18V42L50 30ZM50 18V42M50 30H76"), ["V (older) / D", "D / CR"],
+    "Passes current in one direction only; rectifies or suppresses coil voltage spikes.", ["IEC 60617-5", N_STD]),
+  S("led", "Passive & semiconductors", "LED", P("M40 4V18M30 18H50L40 36ZM30 36H50M40 36V56M52 24L62 14M62 14H57M62 14V19M52 32L62 22M62 22H57M62 22V27"),
+    P("M4 30H26M26 18V42L50 30ZM50 18V42M50 30H76M32 14L40 6M40 6H35M40 6V11M42 14L50 6M50 6H45M50 6V11"), ["V / H (LED)", "LED / D"],
+    "Light-emitting diode: a low-power indicator that conducts in one direction only.", ["IEC 60617-5", N_STD]),
+  S("zener", "Passive & semiconductors", "Zener diode", P("M40 4V18M30 18H50L40 36ZM30 40V36H50V32M40 36V56"), P("M4 30H26M26 18V42L50 30ZM46 21L50 18V42L54 39M50 30H76"), ["V (older) / D", "ZD / D"],
+    "Diode that conducts in reverse at a set voltage; used to clamp or reference a voltage.", ["IEC 60617-5", N_STD]),
+  S("bridge", "Passive & semiconductors", "Bridge rectifier", P("M40 10L68 30L40 50L12 30ZM2 30H12M68 30H78M40 2V10M40 50V58") + T(25, 34, "~", 13) + T(55, 34, "~", 13) + T(40, 25, "+", 10) + T(40, 43, "−", 10),
+    P("M40 10L68 30L40 50L12 30ZM2 30H12M68 30H78M40 2V10M40 50V58") + T(25, 34, "~", 13) + T(55, 34, "~", 13) + T(40, 25, "+", 10) + T(40, 43, "−", 10), ["V / T (rectifier)", "BR / REC"],
+    "Four-diode bridge that converts AC to DC.", ["IEC 60617-5", N_STD], {note: "Drawn the same in both standards."}),
+  // ---- Distribution & metering ----
+  S("earth", "Distribution & metering", "Protective earth", P("M40 4V28M24 28H56M31 36H49M37 44H43"), P("M40 4V28M24 28H56M31 36H49M37 44H43"), ["PE (green-yellow)", "GND / G"],
+    "Connection to protective earth; carries fault current safely to ground.", ["IEC 60617-2", N_STD], {note: "Drawn the same in both standards."}),
+  S("terminal", "Distribution & metering", "Terminal", P("M4 30H33M47 30H76") + CI(40, 30, 7) + T(40, 54, "X1", 9), P("M4 30H33M47 30H76") + CI(40, 30, 7) + T(40, 54, "TB1", 9), ["X (X1:1)", "TB (TB1-1)"],
+    "Connection point where field wiring meets panel wiring.", ["IEC 60617-3", N_STD]),
+  S("junction", "Distribution & metering", "Junction (connection)", P("M4 30H76M40 4V56") + CI(40, 30, 4, true), P("M4 30H76M40 4V56") + CI(40, 30, 4, true), ["—", "—"],
+    "Point where conductors are electrically joined; crossing lines without a dot are not connected.", ["IEC 60617-3", N_STD], {note: "Drawn the same in both standards."}),
+  S("ct", "Distribution & metering", "Current transformer", P("M4 30H76") + CI(40, 30, 13) + CI(30, 22, 2, true), P("M4 30H76") + CI(40, 30, 13) + T(40, 55, "CT", 9), ["T / TA (CT)", "CT"],
+    "Steps a large primary current down to a small measurable secondary current (for meters and protection).", ["IEC 60617-6", N_STD]),
+  S("ammeter", "Distribution & metering", "Ammeter", P("M40 4V16M40 44V56") + CI(40, 30, 14) + T(40, 35, "A", 13), P("M4 30H26M54 30H76") + CI(40, 30, 14) + T(40, 35, "A", 13), ["P / PA", "A / AM"],
+    "Indicates the current flowing in a circuit.", ["IEC 60617-8", N_STD]),
+  S("voltmeter", "Distribution & metering", "Voltmeter", P("M40 4V16M40 44V56") + CI(40, 30, 14) + T(40, 35, "V", 13), P("M4 30H26M54 30H76") + CI(40, 30, 14) + T(40, 35, "V", 13), ["P / PV", "V / VM"],
+    "Indicates the voltage between two points.", ["IEC 60617-8", N_STD]),
+  S("busbar", "Distribution & metering", "Busbar", `<path d="M6 22H74" stroke-width="5"/>` + P("M20 24V56M40 24V56M60 24V56"), `<path d="M6 22H74" stroke-width="5"/>` + P("M20 24V56M40 24V56M60 24V56"), ["W (busbar W1, W2…)", "BUS"],
+    "Common conductor that distributes power to several feeders.", ["", N_STD], {note: "Drawn the same in both standards."}),
+  S("generator", "Distribution & metering", "Generator", P("M40 4V14M40 46V56") + CI(40, 30, 16) + T(40, 28, "G", 13) + T(40, 41, "~", 12), P("M4 30H24M56 30H76") + CI(40, 30, 16) + T(40, 34, "GEN", 10), ["G / GA", "G / GEN"],
+    "Source of electrical power from a rotating machine.", ["IEC 60617-6", N_STD]),
+  // ---- Operator, sensing & control ----
+  S("pb_no", "Operator, sensing & control", "Push button, NO (start)", P("M48 4V20M48 40V56M48 40L37 21M16 22V39") + DSH("M42 30.5H16"), P(hNOs(36, 8) + "M40 28V14M32 14H48"), ["S / SF / SB (13-14)", "PB"],
+    "Momentary push button; its NO contact closes while pressed (start, reset).", ["IEC 60617-7", N_STD]),
+  S("pb_nc", "Operator, sensing & control", "Push button, NC (stop)", P("M48 4V20H37M48 40V56M48 40L38 20M16 22V39") + DSH("M43 30H16"), P(hNCs(36, 8) + "M40 28V14M32 14H48"), ["S / SF / SB (11-12)", "PB"],
+    "Momentary push button; its NC contact opens while pressed (stop).", ["IEC 60617-7", N_STD]),
+  S("estop", "Operator, sensing & control", "Emergency stop (mushroom, NC)", P("M52 4V20H41M52 40V56M52 40L42 20M24 18V42M24 18A12 12 0 0 0 24 42") + DSH("M47 30H24"),
+    P(hNCs(44, 8) + "M40 36V24M26 24A14 10 0 0 1 54 24Z"), ["S / SF (11-12, 21-22)", "ES / E-STOP"],
+    "Latching mushroom-head stop button; its NC contacts open (positive opening) to stop the machine.", ["IEC 60947-5-5; ISO 13850", "ISO 13850; NFPA 79"]),
+  S("selector", "Operator, sensing & control", "Selector switch", P("M52 4V20M52 40V56M52 40L41 21") + DSH("M46 30.5H26") + CI(20, 30.5, 6), P(hNOs(40, 8) + "M40 32V22") + CI(40, 16, 6), ["S / SA", "SS / SEL"],
+    "Maintained rotary switch with two or more positions (auto/manual, local/remote).", ["IEC 60617-7", N_STD]),
+  S("lamp", "Operator, sensing & control", "Pilot lamp / indicator", P("M40 4V16M40 44V56") + CI(40, 30, 14) + P("M30 20L50 40M50 20L30 40"), P("M4 30H26M54 30H76") + CI(40, 30, 14) + T(40, 35, "R", 13), ["P / PF (H in older drawings)", "PL / LT (R, G, A, W)"],
+    "Shows machine status; NEMA marks the colour with a letter (R red, G green, A amber, W white).", ["IEC 60617-8", N_STD]),
+  S("ls_no", "Operator, sensing & control", "Limit switch, NO", P("M52 4V20M52 40V56M52 40L41 21") + DSH("M46 30.5H25") + CI(20, 30.5, 5), P(hNOs(26, 10) + "M40 36V41") + CI(40, 45, 4), ["B / BG / S (SQ)", "LS"],
+    "Position switch whose NO contact closes when a moving part operates the actuator.", ["IEC 60617-7", N_STD]),
+  S("ls_nc", "Operator, sensing & control", "Limit switch, NC", P("M52 4V20H41M52 40V56M52 40L42 20") + DSH("M47 30H29") + CI(24, 30, 5), P(hNCs(26, 10) + "M40 36V41") + CI(40, 45, 4), ["B / BG / S (SQ)", "LS"],
+    "Position switch whose NC contact opens when a moving part operates the actuator.", ["IEC 60617-7", N_STD]),
+  S("prox", "Operator, sensing & control", "Proximity sensor", P("M52 4V20M52 40V56M52 40L41 21M30 30.5L24 24L18 30.5L24 37Z") + DSH("M46 30.5H30"), P("M4 30H24M24 30L40 14L56 30L40 46ZM56 30H76") + T(40, 34, "PRX", 9), ["B / BG", "PRX / PROX"],
+    "Non-contact sensor that detects a nearby object and switches its output.", ["IEC 60617-7", N_STD]),
+  S("solenoid", "Operator, sensing & control", "Solenoid / valve coil", P("M40 4V16M40 44V56") + RC(26, 16, 28, 28) + P("M26 44L54 16"), P("M4 30H26M54 30H76") + CI(40, 30, 14) + T(40, 34, "SOL", 10), ["Y / MB (YV)", "SOL"],
+    "Electromagnet that operates a valve, brake or lock when energised.", ["IEC 60617-7; ISO 1219", N_STD]),
+  S("plc", "Operator, sensing & control", "PLC / controller", P("M4 22H14M4 30H14M4 38H14M66 22H76M66 30H76M66 38H76") + RC(14, 12, 52, 36) + T(40, 35, "PLC", 12),
+    P("M4 22H14M4 30H14M4 38H14M66 22H76M66 30H76M66 38H76") + RC(14, 12, 52, 36) + T(40, 35, "PLC", 12), ["A / K (PLC)", "PLC"],
+    "Programmable controller that reads inputs and drives outputs.", ["IEC 61131", "IEC 61131; NFPA 79"], {note: "Not standardised: drawn as a box."}),
+  // ---- Safety devices ----
+  S("safety_relay", "Safety devices", "Safety relay", P("M4 20H14M4 30H14M4 40H14M66 20H76M66 30H76M66 40H76") + RC(14, 10, 52, 40) + T(40, 28, "SAFETY", 9) + T(40, 40, "RELAY", 9),
+    P("M4 20H14M4 30H14M4 40H14M66 20H76M66 30H76M66 40H76") + RC(14, 10, 52, 40) + T(40, 28, "SAFETY", 9) + T(40, 40, "RELAY", 9), ["K / KF (S11-S12, S21-S22, 13-14…)", "SR / CR-S"],
+    "Monitors safety inputs (E-stops, guards, light curtains) and switches the safety outputs.", ["ISO 13849-1; IEC 62061", "ANSI B11.19; NFPA 79"], {note: "Not standardised: drawn as a box. Check the maker's manual for category and PL."}),
+  S("light_curtain", "Safety devices", "Safety light curtain (Tx / Rx)", RC(8, 8, 14, 44) + RC(58, 8, 14, 44) + DSH("M22 16H58M22 26H58M22 36H58M22 46H58") + T(15, 33, "Tx", 8) + T(65, 33, "Rx", 8),
+    RC(8, 8, 14, 44) + RC(58, 8, 14, 44) + DSH("M22 16H58M22 26H58M22 36H58M22 46H58") + T(15, 33, "Tx", 8) + T(65, 33, "Rx", 8), ["B / BG (Tx, Rx; OSSD1, OSSD2)", "LC / SLC"],
+    "Transmitter and receiver pair that stops the machine when a beam is broken (OSSD outputs).", ["IEC 61496", "ANSI B11.19; IEC 61496"], {note: "Not standardised: drawn as two boxes."}),
+  S("guard_interlock", "Safety devices", "Guard interlock switch (tongue)", P("M52 4V20H41M52 40V56M52 40L42 20") + DSH("M47 30H28") + RC(14, 25, 14, 10), P(hNCs(30, 13) + "M40 43V47") + RC(33, 47, 14, 8), ["B / BG / S (11-12, 21-22)", "LS / IL / GS"],
+    "Proves a guard is closed with a tongue or key; the NC contact opens when the guard opens.", ["ISO 14119", "ISO 14119; ANSI B11.19"]),
+  S("guard_lock", "Safety devices", "Guard lock switch (solenoid)", P("M26 4V20H15M26 40V56M26 40L16 20M58 4V18M58 42V56") + DSH("M21 30H46") + RC(46, 18, 24, 24) + P("M46 42L70 18"),
+    P("M2 30H10M10 22V38M24 22V38M24 30H32M4 42L28 18M69 30H78") + DSH("M32 30H43") + CI(56, 30, 13) + T(56, 34, "SOL", 9), ["B / BG + Y (lock coil)", "GL / IL + SOL"],
+    "Interlock with a solenoid that keeps the guard locked until the machine is safe to open.", ["ISO 14119", "ISO 14119; ANSI B11.19"]),
+  S("pos_open", "Safety devices", "Positive-opening NC contact", P(vNC(44)) + CI(22, 30, 6) + P("M22 26V34M19 31L22 34L25 31") + DSH("M28 30H35"), P(hNCs(26, 10)) + CI(40, 50, 5) + P("M40 47V53M37 51L40 53L43 51"), ["x1-x2 with ⊖ mark", "NC, positive opening"],
+    "NC contact with direct opening action: it is forced open even if the contacts have welded.", ["IEC 60947-5-1 Annex K", "IEC 60947-5-1 Annex K"]),
+  S("mech_linked", "Safety devices", "Mechanically linked contacts (NO + NC)", P(vNO(22) + vNC(58)) + DSH("M16.5 30.5H53"), P(hNOs(16, 6) + hNCs(44, 6)) + DSH("M40 10V50"), ["x3-x4 and x1-x2 linked (mirror contacts)", "linked CR contacts"],
+    "NO and NC contacts forced to move together so they can never be closed at the same time; used for feedback (EDM).", ["IEC 60947-5-1 Annex L; 60947-4-1 Annex F", "IEC 60947-5-1 Annex L"]),
+  S("pull_cord", "Safety devices", "Pull-cord emergency stop switch", P("M52 4V20H41M52 40V56M52 40L42 20M19 30L15 24L11 36L7 24L3 30") + DSH("M47 30H24") + CI(24, 30, 5), P(hNCs(26, 10) + "M40 36V41") + CI(40, 45, 4) + T(40, 58, "PC", 8), ["S / SF (11-12, 21-22)", "PCS / ES"],
+    "Rope-operated emergency stop along a conveyor or perimeter; latching NC contacts.", ["ISO 13850; IEC 60947-5-5", "ISO 13850; NFPA 79"]),
+  S("safety_plc", "Safety devices", "Safety PLC / safety controller", P("M4 22H14M4 30H14M4 38H14M66 22H76M66 30H76M66 38H76") + RC(14, 10, 52, 40) + T(40, 28, "SAFETY", 9) + T(40, 40, "PLC", 10),
+    P("M4 22H14M4 30H14M4 38H14M66 22H76M66 30H76M66 38H76") + RC(14, 10, 52, 40) + T(40, 28, "SAFETY", 9) + T(40, 40, "PLC", 10), ["A / K (F-PLC)", "SPLC / SC"],
+    "Programmable controller with safety-rated logic; outputs are usually OSSD or safety relay outputs.", ["IEC 61131-6; IEC 61508", "ANSI B11.19; IEC 61508"], {note: "Not standardised: drawn as a box."}),
+  S("scanner", "Safety devices", "Safety laser scanner", RC(8, 22, 20, 16) + P("M28 30L68 10M28 30L68 50M68 10Q74 30 68 50") + DSH("M28 30H62") + T(18, 34, "SC", 9),
+    RC(8, 22, 20, 16) + P("M28 30L68 10M28 30L68 50M68 10Q74 30 68 50") + DSH("M28 30H62") + T(18, 34, "SC", 9), ["B / BG (OSSD1, OSSD2)", "SLS / SC"],
+    "Scans a protective field and stops the machine when a person enters it.", ["IEC 61496-3", "ANSI B11.19; IEC 61496-3"], {note: "Not standardised: drawn as a box with a beam."})
+];
+const LIBBYID = Object.fromEntries(SYMLIB.map(s => [s.id, s]));
+// [library id, name test, state test, exclude]. Order = priority. State undefined = any.
+const LIBMATCH = [
+  ["safety_relay", /safety relay|pnoz|\bpsr\b/], ["safety_plc", /safety plc|safety controller|\bf plc\b/], ["light_curtain", /light curtain|ossd|\bslc\b/],
+  ["scanner", /laser scanner|safety scanner|\bscanner\b/], ["pull_cord", /pull ?cord|rope|cable pull/], ["estop", /\be stop\b|\bestop\b|emergency/],
+  ["guard_lock", /(guard|door|interlock|safety).*lock|lock(ing)? (switch|interlock)|solenoid (lock|interlock)/], ["guard_interlock", /interlock|guard|door switch|safety switch|tongue|hinge switch/],
+  ["mech_linked", /mirror|mechanically linked|linked contact|force guided/], ["pos_open", /positive|direct opening/],
+  ["overload", /overload|thermal|\bol\b|mpcb|motor protect/], ["contactor_coil", /contactor.*coil|coil.*contactor/], ["relay_coil", /relay.*coil|coil.*relay|\bcoil\b/],
+  ["changeover", /changeover|change over|spdt|form c|transfer contact/],
+  ["pb_nc", /push ?button|\bpb\b|\bbutton\b/, "NC"], ["pb_no", /push ?button|\bpb\b|\bbutton\b/],
+  ["selector", /selector|key switch|rotary switch|\bss\b|knob/],
+  ["ls_nc", /limit|position switch|roller|micro ?switch|\bls\b|travel switch/, "NC"], ["ls_no", /limit|position switch|roller|micro ?switch|\bls\b|travel switch/],
+  ["prox", /prox|inductive|capacitive|photo|sensor|\bpnp\b|\bnpn\b/],
+  ["contactor_main", /contactor|power contact|main contact|\bpole\b/, ""], ["relay_coil", /\brelay\b|\bcr\b/, ""],
+  ["nc", /contact|contactor|relay|\baux\b|\bcr\b/, "NC"], ["no", /contact|contactor|relay|\baux\b|\bcr\b/],
+  ["mcb3", /(mcb|mccb|acb|breaker).*(3p|3 pole|three pole)|(3p|3 pole|three pole).*(mcb|mccb|acb|breaker)/], ["mcb1", /mcb|mccb|acb|breaker|circuit breaker/],
+  ["fuse", /fuse/], ["isolator", /isolator|disconnect|on off|main switch|load break|switch disconnector|\bdisc\b/],
+  ["vfd", /\bvfd\b|inverter|frequency|servo drive|\bdrive\b/, undefined, /motor/], ["dc_motor", /dc motor|motor dc|armature/], ["motor3", /motor|\bmtr\b/],
+  ["ct", /current transformer|\bct\b/], ["transformer", /transformer|\btrf\b|\bxfmr\b/], ["bridge", /bridge|rectifier/], ["psu", /power supply|\bpsu\b|\bsmps\b|dc supply/],
+  ["resistor", /resistor|\bdbr\b|\bd b r\b/], ["capacitor", /capacitor|\bcap\b/], ["inductor", /inductor|choke|reactor/],
+  ["led", /\bled\b/], ["zener", /zener/], ["diode", /diode/],
+  ["earth", /earth|\bpe\b|ground|\bgnd\b/], ["terminal", /terminal|\btb\b/], ["junction", /junction|connection point|splice|\bjoint\b/],
+  ["ammeter", /ammeter|current meter/], ["voltmeter", /voltmeter|volt meter/], ["busbar", /bus ?bar|\bbus\b/], ["generator", /generator|\bgen\b|alternator/],
+  ["lamp", /lamp|pilot|indicator|beacon|\bpl\b|signal light/], ["solenoid", /solenoid|valve|\bsol\b/], ["plc", /plc|controller|input module|output module|\bi o\b/]
+];
+function libMatch(norm, state){
+  for (const [id, re, s, x] of LIBMATCH) if (re.test(norm) && (s === undefined || s === state) && !(x && x.test(norm))) return LIBBYID[id];
+  return null;
+}
+const libOfRow = r => (r.lib && LIBBYID[r.lib]) || (r.key ? libMatch(String(r.key).split("|")[0], String(r.key).split("|")[1] || "") : null);
+const stdLine = s => [...new Set([s.std[0], s.std[1]].filter(Boolean))].join(" · ");
+function symPair(s){
+  return `<div class="sypair"><figure><span class="syimg">${svg(s.iec)}</span><figcaption>IEC</figcaption></figure><figure><span class="syimg">${svg(s.nema)}</span><figcaption>NEMA</figcaption></figure></div>`;
+}
+
+/* Library browser (Learn tab) */
+const symState = {q: "", grp: "all"};
+function libraryHtml(){
+  return `<h3 class="sec">Symbol library: ${SYMLIB.length} symbols, IEC and NEMA / JIC</h3>
+  <p class="hint" style="margin:-4px 0 10px">Clean reference drawings with typical designations and standards. Makers vary, so always follow the drawing's own legend sheet.</p>
+  <div class="filter"><input type="search" id="symQ" placeholder="Search: contactor, E-stop, diode…" value="${esc(symState.q)}" aria-label="Search symbols"></div>
+  <div class="catchips">${["all", ...GROUPS].map(g => `<button type="button" class="catchip" data-symgrp="${esc(g)}" aria-pressed="${symState.grp === g}">${esc(g === "all" ? "All" : g)}</button>`).join("")}</div>
+  <div id="symGrid" class="syms"></div>`;
+}
+function renderSymGrid(){
+  const el = $("#symGrid"); if (!el) return;
+  const q = symState.q.toLowerCase();
+  const rows = SYMLIB.filter(s => (symState.grp === "all" || s.grp === symState.grp) && (!q || (s.name + " " + s.d.join(" ") + " " + s.desc).toLowerCase().includes(q)));
+  el.innerHTML = rows.length ? rows.map(s => `<div class="sym"><h4>${esc(s.name)}</h4>${symPair(s)}<p class="sy-d"><b>IEC</b> ${esc(s.d[0])}<br><b>NEMA</b> ${esc(s.d[1])}</p><p>${esc(s.desc)}</p>${s.note ? `<p class="sy-n">${esc(s.note)}</p>` : ""}<p class="sy-r">${esc(stdLine(s))}</p></div>`).join("") : '<p class="empty">No symbols match.</p>';
+}
+$("#report").addEventListener("input", ev => { if (ev.target.id === "symQ") { symState.q = ev.target.value; renderSymGrid(); } });
+$("#report").addEventListener("click", ev => {
+  const g = ev.target.closest("[data-symgrp]");
+  if (g) { symState.grp = g.dataset.symgrp; g.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === g ? "true" : "false")); renderSymGrid(); }
+});
+
 /* ---------- Legend: one row per symbol type, with the clearest crop from the original image ---------- */
 const legendState = {busy: false, msg: "", error: ""};
 const stateText = s => s === "NO" ? "normally open (open at rest, closes when operated)" : s === "NC" ? "normally closed (closed at rest, opens when operated)" : "";
@@ -1882,38 +2067,45 @@ const CONF_W = {high: 1, medium: .6, low: .3};
 const tick = () => new Promise(r => setTimeout(r));
 
 async function buildLegend(entry, srcEl, prev = []){
-  const src = srcEl || await legendSource(entry), [W, H] = srcSize(src);
   const marks = arr(entry.marks), old = new Map(arr(prev).map(r => [r.key, {desc: r.desc, descAi: r.descAi}]));
-  const centers = marks.map(m => { const [a, b, c, d] = boxPx(m, entry, W, H); return [(a + c) / 2, (b + d) / 2]; });
   const groups = new Map();
   marks.forEach((m, i) => { const t = typeInfo(m); if (!groups.has(t.key)) groups.set(t.key, {t, idx: []}); groups.get(t.key).idx.push(i); });
+  // Pictures are only cut from the drawing for types that have no clean library symbol
+  const needCrop = [...groups.values()].some(g => !libMatch(g.t.norm, g.t.state));
+  let src = null, W = 0, H = 0, centers = [];
+  if (needCrop) {
+    src = srcEl || await legendSource(entry); [W, H] = srcSize(src);
+    centers = marks.map(m => { const [a, b, c, d] = boxPx(m, entry, W, H); return [(a + c) / 2, (b + d) / 2]; });
+  }
   const rows = [];
   for (const [key, g] of groups) {
     await tick();
-    const ms = g.idx.map(i => marks[i]);
+    const ms = g.idx.map(i => marks[i]), lib = libMatch(g.t.norm, g.t.state);
     const dev = cap1(mostCommon(g.idx.map(i => typeInfo(marks[i]).dev)) || g.t.dev);
     const name = dev + (g.t.state && !new RegExp("\\b" + g.t.state + "$", "i").test(dev) ? " " + g.t.state : "");
     const category = mostCommon(ms.map(m => catKey(m.category))) || "other";
     const tags = [...new Set(ms.map(m => String(m.tag || "").trim()).filter(Boolean))].sort(natSort);
-    // candidates: most confident and largest first, at most 10
-    const cand = [...g.idx].sort((a, b) => {
-      const sc = i => (CONF_W[confKey(marks[i].confidence)] || .6) * Math.sqrt(Math.max(1e-6, (marks[i].box[2] - marks[i].box[0]) * (marks[i].box[3] - marks[i].box[1])));
-      return sc(b) - sc(a);
-    }).slice(0, 10);
     let best = null;
-    for (const i of cand) {
-      const cm = cropMark(src, marks[i], entry, W, H); if (!cm) continue;
-      const sharp = sharpOf(cm.c), side = Math.sqrt(cm.bw * cm.bh);
-      const inside = centers.filter(([cx, cy], j) => { if (j === i) return false; const [a, b, c, d] = boxPx(marks[i], entry, W, H); return cx > a && cx < c && cy > b && cy < d; }).length;
-      const ratio = Math.max(cm.bw, cm.bh) / Math.max(1, Math.min(cm.bw, cm.bh));
-      const score = (.30 * (CONF_W[confKey(marks[i].confidence)] || .6) + .35 * (1 - Math.exp(-sharp / 400)) + .20 * Math.min(1, side / 120) + .15 / (1 + inside))
-        * (side < 10 ? .3 : 1) * (ratio > 5 ? .7 : 1) * (cm.touches ? .85 : 1);
-      if (!best || score > best.score) best = {c: cm.c, score, from: i, side};
+    if (!lib) {
+      const cand = [...g.idx].sort((a, b) => {
+        const sc = i => (CONF_W[confKey(marks[i].confidence)] || .6) * Math.sqrt(Math.max(1e-6, (marks[i].box[2] - marks[i].box[0]) * (marks[i].box[3] - marks[i].box[1])));
+        return sc(b) - sc(a);
+      }).slice(0, 10);
+      for (const i of cand) {
+        const cm = cropMark(src, marks[i], entry, W, H); if (!cm) continue;
+        const sharp = sharpOf(cm.c), side = Math.sqrt(cm.bw * cm.bh), [a, b, c, d] = boxPx(marks[i], entry, W, H);
+        const inside = centers.filter(([cx, cy], j) => j !== i && cx > a && cx < c && cy > b && cy < d).length;
+        const ratio = Math.max(cm.bw, cm.bh) / Math.max(1, Math.min(cm.bw, cm.bh));
+        const score = (.30 * (CONF_W[confKey(marks[i].confidence)] || .6) + .35 * (1 - Math.exp(-sharp / 400)) + .20 * Math.min(1, side / 120) + .15 / (1 + inside))
+          * (side < 10 ? .3 : 1) * (ratio > 5 ? .7 : 1) * (cm.touches ? .85 : 1);
+        if (!best || score > best.score) best = {c: cm.c, score, from: i, side};
+      }
     }
     const prevDesc = old.get(key), known = describeKnown(g.t.norm, g.t.state);
-    rows.push({key, name, device: dev, state: g.t.state, category, count: g.idx.length, tags,
+    const desc = lib ? (lib.generic ? (known || lib.desc) : lib.desc) : (known || prevDesc?.desc || "");
+    rows.push({key, name, device: dev, state: g.t.state, category, count: g.idx.length, tags, where: tags.map(tag => ({tag, sheet: entry.name})), lib: lib ? lib.id : "",
       crop: best ? best.c.toDataURL("image/jpeg", .85) : "", score: best ? Math.round(best.score * 1000) / 1000 : 0, from: best ? best.from : -1, small: !!best && best.side < 28,
-      desc: known || prevDesc?.desc || "", descAi: known ? false : !!prevDesc?.descAi});
+      desc, descAi: lib || known ? false : !!prevDesc?.descAi});
   }
   return rows.sort(legendOrder);
 }
@@ -1937,7 +2129,8 @@ function mergedLegend(rep = state.report){
   const map = new Map();
   for (const e of arr(rep.marked)) for (const r of arr(e.legend)) {
     const x = map.get(r.key);
-    if (!x) { map.set(r.key, {...r, tags: [...arr(r.tags)], sheets: 1}); continue; }
+    if (!x) { map.set(r.key, {...r, tags: [...arr(r.tags)], where: [...arr(r.where)], sheets: 1}); continue; }
+    x.where = [...x.where, ...arr(r.where)];
     x.count += r.count; x.sheets++; x.tags = [...new Set([...x.tags, ...arr(r.tags)])].sort(natSort);
     if ((r.score || 0) > (x.score || 0)) { x.crop = r.crop; x.score = r.score; x.small = r.small; }
     if (!x.desc && r.desc) { x.desc = r.desc; x.descAi = r.descAi; }
@@ -1985,29 +2178,59 @@ async function rotateLegend(){
   persistReport(rep); if (state.report === rep && state.tab === "legend") renderTab();
 }
 
+const normTag = t => String(t || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+const tagTokens = s => (String(s).toUpperCase().match(/[A-Z][A-Z0-9-]*\d[A-Z0-9-]*/g) || []).map(normTag);
+// Where each tag of a legend row sits: sheet, location from the component list, and cross-references from the report
+function usageOf(r, rep = state.report){
+  const comps = arr(rep.components), xrefs = arr(rep.cross_references), names = arr(rep.meta?.sheets);
+  const sheetNo = n => { const i = names.indexOf(n); return i >= 0 ? i + 1 : 0; };
+  const byTag = new Map();
+  for (const w of arr(r.where)) { const k = normTag(w.tag); if (!byTag.has(k)) byTag.set(k, {tag: w.tag, sheets: new Set()}); byTag.get(k).sheets.add(w.sheet); }
+  for (const t of arr(r.tags)) { const k = normTag(t); if (!byTag.has(k)) byTag.set(k, {tag: t, sheets: new Set()}); }
+  return [...byTag.entries()].map(([k, v]) => {
+    const parts = [], sh = [...new Set([...v.sheets].map(sheetNo).filter(Boolean))].sort((a, b) => a - b);
+    if (sh.length && names.length > 1) parts.push("Sh " + sh.join("/"));
+    const comp = comps.find(c => normTag(c.tag) === k);
+    if (comp?.location) parts.push(str(comp.location));
+    const xr = xrefs.filter(x => tagTokens(str(x.meaning) + " " + str(x.ref)).includes(k)).map(x => str(x.ref)).filter(Boolean).slice(0, 3);
+    return {tag: v.tag, where: parts.join(" · "), xref: xr.join(", ")};
+  }).sort((a, b) => natSort(a.tag, b.tag));
+}
+const usageText = u => u.tag + (u.where ? " · " + u.where : "") + (u.xref ? " → " + u.xref : "");
+
+function legendRowHtml(r){
+  const lib = libOfRow(r), use = usageOf(r), color = MARK_COLORS[catKey(r.category)];
+  const left = lib ? symPair(lib) : r.crop ? `<div class="lg-img"><img src="${r.crop}" alt="Cropped ${esc(r.name)} symbol"></div><div class="lg-cap">As drawn (no library symbol)</div>` : `<div class="lg-img"><span class="empty">no symbol</span></div>`;
+  return `<div class="lg-row">
+    <div class="lg-sym">${left}</div>
+    <div class="lg-main">
+      <div class="lg-name"><i class="sw" style="background:${color}"></i>${esc(r.name)}${r.descAi ? '<span class="lg-ai" title="Written by the AI model, not from the built-in glossary">AI</span>' : ""}</div>
+      ${lib ? `<div class="lg-desig"><span><b>IEC</b> ${esc(lib.d[0])}</span><span><b>NEMA</b> ${esc(lib.d[1])}</span></div>` : ""}
+      <p class="lg-desc">${esc(r.desc)}</p>
+      ${lib ? `<p class="lg-ref">${esc(stdLine(lib))}${lib.note ? " · " + esc(lib.note) : ""}</p>` : ""}
+      <div class="lg-tags">${use.length ? use.slice(0, 14).map(u => `<span class="lg-tag" title="${esc(usageText(u))}">${esc(usageText(u))}</span>`).join("") + (use.length > 14 ? `<span class="lg-tag">+${use.length - 14}</span>` : "") : '<span class="empty">no printed tags</span>'}</div>
+      ${r.small && !lib ? '<p class="lg-note">Small symbol, so the crop may be blurry. A higher-resolution original gives a clearer crop.</p>' : ""}
+    </div>
+    <div class="lg-count"><b>${r.count}</b><span>${r.count === 1 ? "time" : "times"}</span></div>
+  </div>`;
+}
 function legendHtml(){
   const entries = arr(state.report.marked);
   if (!entries.length) return `<p class="empty">The legend is built from the Marked drawing. Read a drawing with "Mark components" ticked, or open the Marked drawing tab and tap Mark components.</p>`;
-  const rows = mergedLegend(), need = entries.some(e => arr(e.marks).length && !arr(e.legend).length);
-  const dot = r => `<i class="sw" style="background:${MARK_COLORS[catKey(r.category)]}"></i>`;
-  return `<div class="lg-head"><button class="btn primary small" type="button" data-lg-build ${legendState.busy ? "disabled" : ""}>${need ? "Build legend" : "Rebuild legend"}</button>${rows.length ? `<button class="btn small" type="button" data-lg-rot ${legendState.busy ? "disabled" : ""}>Rotate crops</button>` : ""}<span class="hint" style="margin:0">${esc(legendState.msg)}</span></div>
+  const rows = mergedLegend(), need = entries.some(e => arr(e.marks).length && !arr(e.legend).length), anyCrop = rows.some(r => r.crop && !libOfRow(r));
+  return `<div class="lg-head"><button class="btn primary small" type="button" data-lg-build ${legendState.busy ? "disabled" : ""}>${need ? "Build legend" : "Rebuild legend"}</button>${anyCrop ? `<button class="btn small" type="button" data-lg-rot ${legendState.busy ? "disabled" : ""}>Rotate crops</button>` : ""}<span class="hint" style="margin:0">${esc(legendState.msg)}</span></div>
     ${legendState.error ? `<div class="banner err" style="margin-bottom:10px">${esc(legendState.error)}</div>` : ""}
-    <p class="hint" style="margin:0 0 10px">One row per symbol type. Each picture is the clearest example found, cropped from your original drawing.${entries.length > 1 ? ` Combined from ${entries.length} marked sheets.` : ""}</p>
-    ${rows.length ? `<div class="lg-list">${rows.map(r => `
-      <div class="lg-row">
-        <div class="lg-img">${r.crop ? `<img src="${r.crop}" alt="Cropped ${esc(r.name)} symbol">` : '<span class="empty">no crop</span>'}</div>
-        <div class="lg-main">
-          <div class="lg-name">${dot(r)}${esc(r.name)}${r.descAi ? '<span class="lg-ai" title="Written by the AI model, not from the built-in glossary">AI</span>' : ""}</div>
-          <p class="lg-desc">${esc(r.desc)}</p>
-          <div class="lg-tags">${arr(r.tags).length ? arr(r.tags).slice(0, 14).map(t => `<span class="lg-tag">${esc(t)}</span>`).join("") + (r.tags.length > 14 ? `<span class="lg-tag">+${r.tags.length - 14}</span>` : "") : '<span class="empty">no printed tags</span>'}</div>
-          ${r.small ? '<p class="lg-note">Small symbol, so the crop may be blurry. A higher-resolution original gives a clearer crop.</p>' : ""}
-        </div>
-        <div class="lg-count"><b>${r.count}</b><span>${r.count === 1 ? "time" : "times"}</span></div>
-      </div>`).join("")}</div>` : `<p class="empty">${legendState.busy ? "Building…" : need ? "No legend yet for the marked sheets. Tap Build legend." : "No symbols were marked, so there is nothing to list."}</p>`}`;
+    <p class="hint" style="margin:0 0 10px">One row per symbol type, with clean IEC and NEMA / JIC reference drawings from the built-in library. Designations are typical letter codes, so always follow the drawing's own legend. "Used as" shows each tag with its sheet, location and cross-reference.${entries.length > 1 ? ` Combined from ${entries.length} marked sheets.` : ""}</p>
+    ${rows.length ? `<div class="lg-list">${rows.map(legendRowHtml).join("")}</div>` : `<p class="empty">${legendState.busy ? "Building…" : need ? "No legend yet for the marked sheets. Tap Build legend." : "No symbols were marked, so there is nothing to list."}</p>`}`;
 }
 function legendSection(){
   const rows = mergedLegend(); if (!rows.length) return "";
-  return `<h2>Symbol legend</h2><p class="d">One row per symbol type. Each picture is the clearest example, cropped from the uploaded drawing.</p><table><thead><tr><th>Symbol</th><th>Name</th><th>Description</th><th>Count</th><th>Tags</th></tr></thead><tbody>${rows.map(r => `<tr><td class="lgc">${r.crop ? `<img class="lg" src="${r.crop}" alt="">` : ""}</td><td><b>${esc(r.name)}</b></td><td>${esc(r.desc)}${r.descAi ? ' <span class="d">(AI-written)</span>' : ""}</td><td>${r.count}</td><td>${esc(arr(r.tags).join(", "))}</td></tr>`).join("")}</tbody></table>`;
+  const picture = r => { const lib = libOfRow(r); return lib ? symPair(lib) : r.crop ? `<img class="lg" src="${r.crop}" alt=""><div class="d">as drawn</div>` : ""; };
+  return `<h2>Symbol legend</h2><p class="d">One row per symbol type, with IEC and NEMA / JIC reference drawings. Designations are typical letter codes; always follow the drawing's own legend. "Used as" lists each tag with its sheet, location and cross-reference.</p>
+<table><thead><tr><th>Symbol</th><th>Name</th><th>Designation</th><th>Legend</th><th>Qty</th><th>Used as (tag · sheet · location → cross-ref)</th></tr></thead><tbody>${rows.map(r => {
+    const lib = libOfRow(r), use = usageOf(r);
+    return `<tr><td class="lgc">${picture(r)}</td><td><b>${esc(r.name)}</b></td><td>${lib ? `IEC: ${esc(lib.d[0])}<br>NEMA: ${esc(lib.d[1])}` : ""}</td><td>${esc(r.desc)}${r.descAi ? ' <span class="d">(AI-written)</span>' : ""}${lib ? `<div class="d">${esc(stdLine(lib))}</div>` : ""}</td><td>${r.count}</td><td>${use.map(u => esc(usageText(u))).join("<br>")}</td></tr>`;
+  }).join("")}</tbody></table>`;
 }
 $("#report").addEventListener("click", ev => {
   const t = ev.target;
@@ -2077,7 +2300,11 @@ const REPORT_CSS = `
 .rpt img.mk{display:block;max-width:100%;max-height:225mm;margin:4px auto 8px;border:1px solid #cfd6d0;break-inside:avoid}
 .rpt .newpage{break-before:page}
 .rpt img.lg{display:block;max-width:26mm;max-height:20mm;margin:0 auto}
-.rpt td.lgc{width:30mm;text-align:center}
+.rpt td.lgc{width:36mm;text-align:center}
+.rpt .sypair{display:flex;gap:2mm;justify-content:center}
+.rpt .sypair figure{margin:0;border:0;padding:0;background:none;text-align:center}
+.rpt .sypair svg{display:block;width:15mm;height:11mm;color:#10161c}
+.rpt .sypair figcaption{font:6pt Arial,sans-serif;color:#56606a}
 .rpt ul,.rpt ol{margin:2px 0 8px;padding-left:18px}
 .rpt li{margin:0 0 2px}
 `;
