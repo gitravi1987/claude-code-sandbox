@@ -10,6 +10,17 @@ A single-page web app that reads electrical drawings: IEC and NEMA/JIC control c
   - The model list is loaded live from OpenRouter (vision models only). Compare two or three models on the same sheet: each saved report records which model read it.
   - Give the key a monthly spending limit in OpenRouter.
 
+## Legend tab (docs version)
+
+Built right after a sheet is marked, from the marks and the original image:
+
+- Marks are grouped by symbol type. The type key is the device name (tag, stray numbers and the NO/NC word removed; case, spaces, hyphens and "3 ~" tidied; a few synonyms such as E-stop, circuit breaker/MCB and inverter/VFD merged) plus the NO/NC state. So `Contactor NC` and `Contactor` stay separate rows, and `MCB 3P` and `MCB-3P` merge.
+- The crop for each type is cut from the full-resolution sheet while it is loaded (otherwise from the saved 1600 px image), with 12% padding, up to 200 px.
+- The clearest crop of each type is picked by score: model confidence (30%), sharpness as variance of the Laplacian on a 64 px grayscale copy (35%), box size (20%), how few other marks sit inside the box (15%), with penalties for tiny boxes, extreme aspect ratios and boxes touching the image edge.
+- One-line descriptions come from a built-in glossary of about 30 common devices (state aware for NO/NC). Types the glossary does not know get one text-only model call that writes a line, shown with an `AI` badge. If that call fails, a generic line by category is used.
+- Row = picture, name, description, count and tags. Several marked sheets are combined into one legend. Swap X/Y recrops the symbols; Rotate crops turns all pictures 90°; Build/Rebuild legend works for reports marked before this feature existed.
+- The legend is in the PDF and HTML report (after the marked drawings), in a `Legend` sheet in the Excel file, and in the JSON export without the pictures.
+
 ## Sharing a report (docs version)
 
 - **Save as PDF** builds an A4 report (summary, observations and recommendations, safety functions, how it works, marked drawings, components, connections, to-verify list) and opens the browser print window. Choose "Save as PDF" as the destination. The report is built into a hidden `#printRoot` element that is only visible when printing, so no PDF library is needed and the text stays selectable. The page title is set to the report name, which Chrome suggests as the file name.

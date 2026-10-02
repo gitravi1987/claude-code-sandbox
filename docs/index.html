@@ -213,6 +213,21 @@ ul.plain{margin:0;padding-left:18px;font-size:13.5px}
 .hitem .acts{display:flex;gap:4px}
 .exports{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 #printRoot{display:none}
+.lg-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.lg-list{display:flex;flex-direction:column;gap:8px}
+.lg-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:12px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface)}
+.lg-img{width:96px;height:80px;border:1px solid var(--line);border-radius:6px;background:#fff;display:grid;place-items:center;overflow:hidden}
+.lg-img img{max-width:100%;max-height:100%;display:block}
+.lg-name{font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.lg-desc{margin:2px 0 6px;font-size:13px;color:var(--muted)}
+.lg-tags{display:flex;flex-wrap:wrap;gap:4px}
+.lg-tag{font:500 11.5px var(--f-mono);border:1px solid var(--line);border-radius:5px;padding:1px 6px;background:var(--surface-2)}
+.lg-note{margin:6px 0 0;font-size:12px;color:var(--minor)}
+.lg-count{text-align:right;font-variant-numeric:tabular-nums}
+.lg-count b{display:block;font:700 22px/1 var(--f-display)}
+.lg-count span{font-size:11px;color:var(--muted)}
+.lg-ai{font:700 9.5px/1 var(--f-mono);border:1px solid var(--line);border-radius:4px;padding:2px 4px;color:var(--muted)}
+@media (max-width:520px){.lg-row{grid-template-columns:76px minmax(0,1fr) auto;gap:10px}.lg-img{width:76px;height:64px}}
 #sumOut{width:100%;min-height:140px;margin-top:8px;font:12.5px/1.4 var(--f-mono)}
 @media print{
   @page{size:A4;margin:14mm 12mm}
@@ -1111,6 +1126,7 @@ function renderReport(){
   const tabs = [
     ["overview","Overview",""],
     ["marks","Marked drawing",arr(r.marked).length || ""],
+    ["legend","Legend",mergedLegend(r).length || ""],
     ["components","Components",r.components.length],
     ["connections","Connections",r.connections.length],
     ["safety","Safety review",r.findings.length],
@@ -1172,6 +1188,7 @@ function renderTab(){
   if (state.tab === "sld") p.innerHTML = sldHtml(r.sld);
   if (state.tab === "verify") p.innerHTML = verifyHtml(r);
   if (state.tab === "marks") { p.innerHTML = marksHtml(); renderMarks(); }
+  if (state.tab === "legend") p.innerHTML = legendHtml();
   if (state.tab === "learn") { p.innerHTML = learnHtml(); renderQuiz(); renderProgress(); }
   if (state.tab === "chat") { p.innerHTML = chatHtml(); bindChat(); }
 }
@@ -1616,9 +1633,15 @@ async function markSheet(sheet, ctl){
   const raw = await sample.json(markPrompt(sheet.name, send.width, send.height), {images: blob, signal: ctl.signal, model: model || undefined});
   const partial = sample.lastRepaired;
   const keep = crop(sheet.canvas, 0, 0, W0, H0, 1600);
-  return {name: sheet.name, img: keep.toDataURL("image/jpeg", .78), w: keep.width, h: keep.height, marks: cleanMarks(raw, send.width, send.height), swap: false, model: model || getModel(), at: Date.now(), partial};
+  const entry = {name: sheet.name, img: keep.toDataURL("image/jpeg", .78), w: keep.width, h: keep.height, marks: cleanMarks(raw, send.width, send.height), swap: false, model: model || getModel(), at: Date.now(), partial};
+  markState.status = "Cropping symbols for the legend…";
+  const st = $("#markStatus"); if (st) st.textContent = markState.status;
+  try { entry.legend = await buildLegend(entry, sheet.canvas); await describeUnknown(entry.legend, ctl); }
+  catch (e) { if (e?.code === "cancelled") throw e; entry.legend = entry.legend || []; }
+  return entry;
 }
 function updateMarkTab(){
+  updateLegendTab();
   const btn = $('[data-tab="marks"]'); if (!btn) return;
   const n = arr(state.report.marked).length;
   btn.innerHTML = `Marked drawing${markState.busy ? '<span class="c">…</span>' : n ? `<span class="c">${n}</span>` : ""}`;
@@ -1627,7 +1650,7 @@ async function runMarking(sheets, rep){
   if (markState.busy || !sheets.length) return;
   if (!getKey() || !(markModelId() || getModel())) { showErr(ERR.no_key); openSetup(); return; }
   markState.busy = true; markState.ctl = new AbortController(); markState.error = "";
-  const here = () => state.report === rep && state.tab === "marks";
+  const here = () => state.report === rep && (state.tab === "marks" || state.tab === "legend");
   updateMarkTab(); if (here()) renderTab();
   try {
     for (let i = 0; i < sheets.length; i++) {
@@ -1743,11 +1766,254 @@ $("#report").addEventListener("click", ev => {
   const mc = t.closest("[data-markcat]"); if (mc) { const c = mc.dataset.markcat; if (markState.cats.has(c)) markState.cats.delete(c); else markState.cats.add(c); mc.setAttribute("aria-pressed", markState.cats.has(c)); renderMarks(); return; }
   if (t.closest("#markRun")) startMarking();
   if (t.closest("#markStop")) markState.ctl?.abort();
-  if (t.closest("[data-markswap]")) { const e = curMark(); if (e) { e.swap = !e.swap; persistReport(state.report); renderTab(); } }
+  if (t.closest("[data-markswap]")) { const e = curMark(); if (e) { e.swap = !e.swap; renderTab(); refreshLegend(e); } }
   if (t.closest("[data-markdl]")) markDownload();
 });
 $("#report").addEventListener("change", ev => { if (ev.target.id === "markSheet") { markState.sel = ev.target.value; renderTab(); } });
 $("#report").addEventListener("input", ev => { if (ev.target.id === "markModel") store.set("rms-or-mark-model", ev.target.value.trim()); });
+
+/* ---------- Legend: one row per symbol type, with the clearest crop from the original image ---------- */
+const legendState = {busy: false, msg: "", error: ""};
+const stateText = s => s === "NO" ? "normally open (open at rest, closes when operated)" : s === "NC" ? "normally closed (closed at rest, opens when operated)" : "";
+// [test on the normalised type name, describe(state)]. Specific entries come before general ones.
+const GLOSSARY = [
+  [/safety relay|\bpnoz\b|\bpsr\b|safety plc|safety controller/, () => "Monitors safety inputs such as E-stops, guards and light curtains and switches the safety outputs."],
+  [/light curtain|\bossd\b|safety scanner|laser scanner|safety mat/, () => "Optical or pressure safety sensor that detects a person in the danger zone and triggers a stop."],
+  [/\be stop\b|\bestop\b/, s => s === "NO" ? "Emergency stop push button; this NO contact closes when the button is pressed." : "Latching emergency stop push button; its NC contacts open to stop the machine when pressed."],
+  [/interlock|guard|door switch|safety switch|solenoid lock/, s => s === "NO" ? "Guard interlock switch; this NO contact closes when the guard is closed." : "Guard interlock switch that proves a guard is closed; its NC contact opens when the guard opens."],
+  [/limit switch|position switch|travel switch|micro switch|\blimit\b/, s => "Mechanical position switch operated by a moving part" + (s ? "; " + stateText(s) : ".")],
+  [/prox|sensor|photo ?eye|photoelectric|encoder|\bpnp\b|\bnpn\b/, () => "Sensor that detects the presence or position of an object and sends a signal."],
+  [/overload|thermal relay|motor protect|\bmpcb\b|\bmpr\b/, () => "Protects a motor from overload; its trip contact (NC 95-96) opens when the motor draws too much current."],
+  [/on off switch|main switch|isolator|disconnect|load break|changeover/, () => "Manual switch that connects or isolates the supply to the circuit."],
+  [/rccb|elcb|\brcd\b|residual/, () => "Trips on leakage (earth fault) current to protect people and equipment."],
+  [/mcb|mccb|\bacb\b|breaker/, () => "Protects the circuit against overload and short circuit and can be switched off by hand."],
+  [/fuse/, () => "Protective device that melts and opens the circuit on overcurrent."],
+  [/soft ?starter/, () => "Soft starter that ramps the motor voltage for a smooth start and stop."],
+  [/\bvfd\b|inverter|frequency|servo drive/, () => "Variable frequency drive that controls motor speed and torque by varying frequency and voltage."],
+  [/brake resistor|\bdbr\b|\bd b r\b|db resistor/, () => "Braking resistor that absorbs regenerative energy from the drive when the motor slows down."],
+  [/resistor/, () => "Resistor that limits current or drops voltage."],
+  [/motor/, () => "Electric motor that drives the load; 3~ means three-phase."],
+  [/diode/, () => "Allows current in one direction only; used for rectifying or suppressing coil voltage spikes."],
+  [/capacitor/, () => "Stores charge; used for smoothing, filtering or power-factor correction."],
+  [/transformer|\btrf\b|\bxfmr\b/, () => "Steps the supply voltage up or down, for example 415 V to 230 V or 24 V for control circuits."],
+  [/power supply|\bsmps\b|dc supply|rectifier|\bpsu\b/, () => "Converts the AC supply to a regulated DC voltage (typically 24 V DC) for control devices."],
+  [/lamp|beacon|indicator|\bled\b|horn|buzzer|siren/, () => "Signalling device that shows machine status or sounds an alarm."],
+  [/solenoid|valve/, () => "Electrically operated valve that controls air or fluid when its coil is energised."],
+  [/terminal/, () => "Connection point where field wires meet the panel wiring."],
+  [/earth|\bpe\b|ground/, () => "Protective earth connection that carries fault current safely to ground."],
+  [/plc|controller|output module|input module|\bi o\b/, () => "Programmable controller or I/O point that reads inputs and drives outputs."],
+  [/contactor.*coil|coil.*contactor/, () => "Electromagnet of a contactor: when energised (A1/A2) it pulls in the main and auxiliary contacts."],
+  [/relay.*coil|coil.*relay/, () => "Electromagnet of a relay: when energised (A1/A2) it switches the relay contacts."],
+  [/\bcoil\b/, () => "Electromagnet that operates the linked contacts when energised."],
+  [/contactor/, s => s === "NO" ? "Contactor contact that is open at rest and closes when the coil is energised." : s === "NC" ? "Contactor contact that is closed at rest and opens when the coil is energised." : "Electromagnetic switch that connects or disconnects a power circuit when its coil is energised."],
+  [/relay/, s => s === "NO" ? "Relay contact that is open at rest and closes when the relay coil is energised." : s === "NC" ? "Relay contact that is closed at rest and opens when the relay coil is energised." : "Electromagnetic switch that operates its contacts when the coil is energised."],
+  [/push ?button|\bpb\b|selector|key switch|knob|\bswitch\b/, s => "Operator switch or push button" + (s ? "; " + stateText(s) : ".")],
+  [/contact/, s => "Switching contact" + (s ? "; " + stateText(s) : ".")]
+];
+const GENERIC_DESC = {
+  power: "Power-circuit component; see the drawing for its rating and connections.",
+  control: "Control-circuit component that switches or signals other devices.",
+  safety: "Safety-related device in the safety chain; check its function on the drawing.",
+  load: "Load or actuator driven by the circuit.",
+  signal: "Sensor, terminal or supply used for signals and wiring.",
+  other: "Symbol type not in the built-in glossary."
+};
+const SYNONYMS = [
+  [/\bemergency stop( push ?button)?\b/g, "e stop"], [/\bestop\b/g, "e stop"], [/\bpushbutton\b/g, "push button"],
+  [/\b(miniature )?circuit breaker\b/g, "mcb"], [/\bvariable frequency drive\b|\bfrequency (inverter|converter)\b|\binverter\b/g, "vfd"]
+];
+function describeKnown(name, state){
+  for (const [re, fn] of GLOSSARY) if (re.test(name)) return fn(state);
+  return "";
+}
+// The device name without its tag, NO/NC word or stray numbers
+function cleanDevice(m){
+  let d = (String(m.device || "").trim() || String(m.label || "").trim()).replace(/\s*~\s*/g, "~");   // "3 ~" is one word, not a stray number
+  const tag = String(m.tag || "").trim();
+  if (tag) d = d.split(tag).join(" ");
+  d = d.replace(/\b(NO|NC)\b/g, " ").replace(/(^|\s)\d+(?=\s|$)/g, " ").replace(/\s+/g, " ").trim();
+  return d || "Unnamed symbol";
+}
+function typeInfo(m){
+  const raw = String(m.device || "") + " " + String(m.label || "");
+  const state = m.state === "NO" || m.state === "NC" ? m.state : /\bNC\b/.test(raw) ? "NC" : /\bNO\b/.test(raw) ? "NO" : "";
+  const dev = cleanDevice(m);
+  let n = dev.toLowerCase().replace(/[^a-z0-9~+]+/g, " ").replace(/\s*~\s*/g, "~").replace(/\s+/g, " ").trim();
+  for (const [re, to] of SYNONYMS) n = n.replace(re, to);
+  return {key: n + "|" + state, norm: n, dev, state};
+}
+const cap1 = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+const natSort = (a, b) => String(a).localeCompare(String(b), undefined, {numeric: true});
+const mostCommon = list => { const c = new Map(); list.forEach(x => c.set(x, (c.get(x) || 0) + 1)); return [...c.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]; };
+
+async function legendSource(entry){
+  const s = state.sheets.find(x => x.name === entry.name);
+  return s ? s.canvas : await imgOf(entry);
+}
+const srcSize = el => el instanceof HTMLCanvasElement ? [el.width, el.height] : [el.naturalWidth, el.naturalHeight];
+function boxPx(m, entry, W, H){
+  let [x1, y1, x2, y2] = m.box; if (entry.swap) [x1, y1, x2, y2] = [y1, x1, y2, x2];
+  return [x1 * W, y1 * H, x2 * W, y2 * H];
+}
+// Variance of the Laplacian on a small grayscale copy: higher = more distinct strokes
+function sharpOf(c){
+  const k = 64 / Math.max(c.width, c.height), w = Math.max(8, Math.round(c.width * k)), h = Math.max(8, Math.round(c.height * k));
+  const t = document.createElement("canvas"); t.width = w; t.height = h;
+  const x = t.getContext("2d", {willReadFrequently: true}); x.drawImage(c, 0, 0, w, h);
+  const d = x.getImageData(0, 0, w, h).data, g = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) g[i] = .299 * d[i * 4] + .587 * d[i * 4 + 1] + .114 * d[i * 4 + 2];
+  let s = 0, s2 = 0, n = 0;
+  for (let y = 1; y < h - 1; y++) for (let xx = 1; xx < w - 1; xx++) { const i = y * w + xx, v = 4 * g[i] - g[i - 1] - g[i + 1] - g[i - w] - g[i + w]; s += v; s2 += v * v; n++; }
+  return n ? s2 / n - (s / n) * (s / n) : 0;
+}
+function cropMark(src, m, entry, W, H){
+  const [x1, y1, x2, y2] = boxPx(m, entry, W, H), bw = x2 - x1, bh = y2 - y1;
+  const pad = Math.max(6, Math.max(bw, bh) * .12);
+  const sx = Math.max(0, Math.floor(x1 - pad)), sy = Math.max(0, Math.floor(y1 - pad));
+  const ex = Math.min(W, Math.ceil(x2 + pad)), ey = Math.min(H, Math.ceil(y2 + pad));
+  const sw = ex - sx, sh = ey - sy;
+  if (sw < 4 || sh < 4) return null;
+  const k = Math.min(3, 200 / Math.max(sw, sh));
+  const c = newCanvas(sw * k, sh * k), g = c.getContext("2d");
+  g.imageSmoothingQuality = "high"; g.drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return {c, bw, bh, touches: x1 < W * .01 || y1 < H * .01 || x2 > W * .99 || y2 > H * .99};
+}
+const CONF_W = {high: 1, medium: .6, low: .3};
+const tick = () => new Promise(r => setTimeout(r));
+
+async function buildLegend(entry, srcEl, prev = []){
+  const src = srcEl || await legendSource(entry), [W, H] = srcSize(src);
+  const marks = arr(entry.marks), old = new Map(arr(prev).map(r => [r.key, {desc: r.desc, descAi: r.descAi}]));
+  const centers = marks.map(m => { const [a, b, c, d] = boxPx(m, entry, W, H); return [(a + c) / 2, (b + d) / 2]; });
+  const groups = new Map();
+  marks.forEach((m, i) => { const t = typeInfo(m); if (!groups.has(t.key)) groups.set(t.key, {t, idx: []}); groups.get(t.key).idx.push(i); });
+  const rows = [];
+  for (const [key, g] of groups) {
+    await tick();
+    const ms = g.idx.map(i => marks[i]);
+    const dev = cap1(mostCommon(g.idx.map(i => typeInfo(marks[i]).dev)) || g.t.dev);
+    const name = dev + (g.t.state && !new RegExp("\\b" + g.t.state + "$", "i").test(dev) ? " " + g.t.state : "");
+    const category = mostCommon(ms.map(m => catKey(m.category))) || "other";
+    const tags = [...new Set(ms.map(m => String(m.tag || "").trim()).filter(Boolean))].sort(natSort);
+    // candidates: most confident and largest first, at most 10
+    const cand = [...g.idx].sort((a, b) => {
+      const sc = i => (CONF_W[confKey(marks[i].confidence)] || .6) * Math.sqrt(Math.max(1e-6, (marks[i].box[2] - marks[i].box[0]) * (marks[i].box[3] - marks[i].box[1])));
+      return sc(b) - sc(a);
+    }).slice(0, 10);
+    let best = null;
+    for (const i of cand) {
+      const cm = cropMark(src, marks[i], entry, W, H); if (!cm) continue;
+      const sharp = sharpOf(cm.c), side = Math.sqrt(cm.bw * cm.bh);
+      const inside = centers.filter(([cx, cy], j) => { if (j === i) return false; const [a, b, c, d] = boxPx(marks[i], entry, W, H); return cx > a && cx < c && cy > b && cy < d; }).length;
+      const ratio = Math.max(cm.bw, cm.bh) / Math.max(1, Math.min(cm.bw, cm.bh));
+      const score = (.30 * (CONF_W[confKey(marks[i].confidence)] || .6) + .35 * (1 - Math.exp(-sharp / 400)) + .20 * Math.min(1, side / 120) + .15 / (1 + inside))
+        * (side < 10 ? .3 : 1) * (ratio > 5 ? .7 : 1) * (cm.touches ? .85 : 1);
+      if (!best || score > best.score) best = {c: cm.c, score, from: i, side};
+    }
+    const prevDesc = old.get(key), known = describeKnown(g.t.norm, g.t.state);
+    rows.push({key, name, device: dev, state: g.t.state, category, count: g.idx.length, tags,
+      crop: best ? best.c.toDataURL("image/jpeg", .85) : "", score: best ? Math.round(best.score * 1000) / 1000 : 0, from: best ? best.from : -1, small: !!best && best.side < 28,
+      desc: known || prevDesc?.desc || "", descAi: known ? false : !!prevDesc?.descAi});
+  }
+  return rows.sort(legendOrder);
+}
+const legendOrder = (a, b) => MARK_CATS.indexOf(a.category) - MARK_CATS.indexOf(b.category) || b.count - a.count || natSort(a.name, b.name);
+
+// Symbol types that the built-in glossary doesn't know get one short text-only call to the model
+async function describeUnknown(rows, ctl){
+  const need = rows.filter(r => !r.desc).slice(0, 15);
+  if (!need.length) return;
+  if (getKey() && getModel()) {
+    try {
+      const out = await sample.json(`You are an electrical controls engineer. For each symbol type below, taken from an electrical drawing, write ONE plain-English line (at most 120 characters) saying what it is and what it does in a circuit. Do not invent ratings. Reply with only JSON: {"descriptions": {"<key>": "<line>"}}.\n\nSymbol types:\n` + need.map(r => `- ${r.key}: ${r.name} (${r.category})`).join("\n"), {signal: ctl?.signal, model: markModelId() || undefined});
+      const d = out?.descriptions || {};
+      need.forEach(r => { const t = str(d[r.key]).trim(); if (t) { r.desc = t.slice(0, 160); r.descAi = true; } });
+    } catch (e) { if (e?.code === "cancelled") throw e; }
+  }
+  rows.forEach(r => { if (!r.desc) r.desc = GENERIC_DESC[r.category] || GENERIC_DESC.other; });
+}
+
+function mergedLegend(rep = state.report){
+  const map = new Map();
+  for (const e of arr(rep.marked)) for (const r of arr(e.legend)) {
+    const x = map.get(r.key);
+    if (!x) { map.set(r.key, {...r, tags: [...arr(r.tags)], sheets: 1}); continue; }
+    x.count += r.count; x.sheets++; x.tags = [...new Set([...x.tags, ...arr(r.tags)])].sort(natSort);
+    if ((r.score || 0) > (x.score || 0)) { x.crop = r.crop; x.score = r.score; x.small = r.small; }
+    if (!x.desc && r.desc) { x.desc = r.desc; x.descAi = r.descAi; }
+  }
+  return [...map.values()].sort(legendOrder);
+}
+function updateLegendTab(){
+  const btn = $('[data-tab="legend"]'); if (!btn) return;
+  const n = mergedLegend().length;
+  btn.innerHTML = `Legend${legendState.busy ? '<span class="c">…</span>' : n ? `<span class="c">${n}</span>` : ""}`;
+}
+const legendTabOpen = rep => state.report === rep && (state.tab === "legend" || state.tab === "marks");
+async function rebuildLegends(){
+  if (legendState.busy) return;
+  const rep = state.report, entries = arr(rep.marked).filter(e => arr(e.marks).length);
+  if (!entries.length) return;
+  legendState.busy = true; legendState.error = ""; const ctl = new AbortController();
+  updateLegendTab(); if (legendTabOpen(rep)) renderTab();
+  try {
+    for (const e of entries) {
+      legendState.msg = "Cropping symbols…"; if (legendTabOpen(rep) && state.tab === "legend") renderTab();
+      e.legend = await buildLegend(e, null, e.legend);
+      legendState.msg = "Describing symbols…"; if (legendTabOpen(rep) && state.tab === "legend") renderTab();
+      await describeUnknown(e.legend, ctl);
+    }
+    persistReport(rep);
+  } catch { legendState.error = "Couldn't build the legend. Try again."; }
+  finally { legendState.busy = false; legendState.msg = ""; updateLegendTab(); if (legendTabOpen(rep)) renderTab(); }
+}
+async function refreshLegend(entry){          // after Swap X/Y: boxes moved, so crop again and keep the descriptions
+  const rep = state.report;
+  try { entry.legend = await buildLegend(entry, null, entry.legend); await describeUnknown(entry.legend, null); persistReport(rep); } catch {}
+  updateLegendTab(); if (legendTabOpen(rep)) renderTab();
+}
+function rotateUrl(url){
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => { const c = document.createElement("canvas"); c.width = im.naturalHeight; c.height = im.naturalWidth; const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.translate(c.width, 0); g.rotate(Math.PI / 2); g.drawImage(im, 0, 0); res(c.toDataURL("image/jpeg", .85)); };
+    im.onerror = () => res(url); im.src = url;
+  });
+}
+async function rotateLegend(){
+  const rep = state.report;
+  for (const e of arr(rep.marked)) for (const r of arr(e.legend)) if (r.crop) r.crop = await rotateUrl(r.crop);
+  persistReport(rep); if (state.report === rep && state.tab === "legend") renderTab();
+}
+
+function legendHtml(){
+  const entries = arr(state.report.marked);
+  if (!entries.length) return `<p class="empty">The legend is built from the Marked drawing. Read a drawing with "Mark components" ticked, or open the Marked drawing tab and tap Mark components.</p>`;
+  const rows = mergedLegend(), need = entries.some(e => arr(e.marks).length && !arr(e.legend).length);
+  const dot = r => `<i class="sw" style="background:${MARK_COLORS[catKey(r.category)]}"></i>`;
+  return `<div class="lg-head"><button class="btn primary small" type="button" data-lg-build ${legendState.busy ? "disabled" : ""}>${need ? "Build legend" : "Rebuild legend"}</button>${rows.length ? `<button class="btn small" type="button" data-lg-rot ${legendState.busy ? "disabled" : ""}>Rotate crops</button>` : ""}<span class="hint" style="margin:0">${esc(legendState.msg)}</span></div>
+    ${legendState.error ? `<div class="banner err" style="margin-bottom:10px">${esc(legendState.error)}</div>` : ""}
+    <p class="hint" style="margin:0 0 10px">One row per symbol type. Each picture is the clearest example found, cropped from your original drawing.${entries.length > 1 ? ` Combined from ${entries.length} marked sheets.` : ""}</p>
+    ${rows.length ? `<div class="lg-list">${rows.map(r => `
+      <div class="lg-row">
+        <div class="lg-img">${r.crop ? `<img src="${r.crop}" alt="Cropped ${esc(r.name)} symbol">` : '<span class="empty">no crop</span>'}</div>
+        <div class="lg-main">
+          <div class="lg-name">${dot(r)}${esc(r.name)}${r.descAi ? '<span class="lg-ai" title="Written by the AI model, not from the built-in glossary">AI</span>' : ""}</div>
+          <p class="lg-desc">${esc(r.desc)}</p>
+          <div class="lg-tags">${arr(r.tags).length ? arr(r.tags).slice(0, 14).map(t => `<span class="lg-tag">${esc(t)}</span>`).join("") + (r.tags.length > 14 ? `<span class="lg-tag">+${r.tags.length - 14}</span>` : "") : '<span class="empty">no printed tags</span>'}</div>
+          ${r.small ? '<p class="lg-note">Small symbol, so the crop may be blurry. A higher-resolution original gives a clearer crop.</p>' : ""}
+        </div>
+        <div class="lg-count"><b>${r.count}</b><span>${r.count === 1 ? "time" : "times"}</span></div>
+      </div>`).join("")}</div>` : `<p class="empty">${legendState.busy ? "Building…" : need ? "No legend yet for the marked sheets. Tap Build legend." : "No symbols were marked, so there is nothing to list."}</p>`}`;
+}
+function legendSection(){
+  const rows = mergedLegend(); if (!rows.length) return "";
+  return `<h2>Symbol legend</h2><p class="d">One row per symbol type. Each picture is the clearest example, cropped from the uploaded drawing.</p><table><thead><tr><th>Symbol</th><th>Name</th><th>Description</th><th>Count</th><th>Tags</th></tr></thead><tbody>${rows.map(r => `<tr><td class="lgc">${r.crop ? `<img class="lg" src="${r.crop}" alt="">` : ""}</td><td><b>${esc(r.name)}</b></td><td>${esc(r.desc)}${r.descAi ? ' <span class="d">(AI-written)</span>' : ""}</td><td>${r.count}</td><td>${esc(arr(r.tags).join(", "))}</td></tr>`).join("")}</tbody></table>`;
+}
+$("#report").addEventListener("click", ev => {
+  const t = ev.target;
+  if (t.closest("[data-lg-build]")) rebuildLegends();
+  if (t.closest("[data-lg-rot]")) rotateLegend();
+});
 
 /* ---------- Exports ---------- */
 function fileBase(){ return (state.report.sheet?.title || "schematic-report").replace(/[^\w\- ]+/g, "").trim().slice(0, 60) || "schematic-report"; }
@@ -1758,7 +2024,7 @@ async function doExport(kind, btn){
   const msg = $("#exMsg"); msg.textContent = "Preparing…"; btn.disabled = true;
   try {
     let data, name;
-    if (kind === "json") { data = JSON.stringify({...state.report, marked: arr(state.report.marked).map(({img, ...rest}) => rest)}, null, 2); name = fileBase() + ".json"; }
+    if (kind === "json") { data = JSON.stringify({...state.report, marked: arr(state.report.marked).map(({img, legend, ...rest}) => ({...rest, legend: arr(legend).map(({crop, ...l}) => l)}))}, null, 2); name = fileBase() + ".json"; }
     if (kind === "html") { data = reportDoc(await markedForReport()); name = fileBase() + ".html"; }
     if (kind === "xlsx") {
       if (!window.XLSX) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
@@ -1774,6 +2040,8 @@ async function doExport(kind, btn){
       if (arr(r.sld?.feeders).length) add(r.sld.feeders.map(flat), "SLD feeders");
       const mrows = arr(r.marked).flatMap(e => e.marks.map((m, i) => flat({sheet: e.name, n: i + 1, label: m.label, tag: m.tag, device: m.device, state: m.state, category: m.category, confidence: m.confidence})));
       if (mrows.length) add(mrows, "Marks");
+      const lrows = mergedLegend().map(l => flat({symbol: l.name, description: l.desc, count: l.count, tags: l.tags, type: l.category}));
+      if (lrows.length) add(lrows, "Legend");
       add([...r.verify.map(v => ({type: "verify", item: v})), ...r.unreadable.map(v => ({type: "unreadable", item: v}))], "To verify");
       data = new Blob([XLSX.write(wb, {bookType: "xlsx", type: "array"})]); name = fileBase() + ".xlsx";
     }
@@ -1808,6 +2076,8 @@ const REPORT_CSS = `
 .rpt .sev.critical{color:#c42b2b}.rpt .sev.major{color:#c05f0a}.rpt .sev.minor{color:#8f7200}.rpt .sev.info{color:#56606a}
 .rpt img.mk{display:block;max-width:100%;max-height:225mm;margin:4px auto 8px;border:1px solid #cfd6d0;break-inside:avoid}
 .rpt .newpage{break-before:page}
+.rpt img.lg{display:block;max-width:26mm;max-height:20mm;margin:0 auto}
+.rpt td.lgc{width:30mm;text-align:center}
 .rpt ul,.rpt ol{margin:2px 0 8px;padding-left:18px}
 .rpt li{margin:0 0 2px}
 `;
@@ -1833,6 +2103,7 @@ function reportBody(marked = []){
 <h2>Safety functions</h2>${r.safety_functions.map(x => `<div class="sfn"><h3>${esc(x.name)}</h3><p><b>Input:</b> ${esc(x.input_devices)} &nbsp;→&nbsp; <b>Logic:</b> ${esc(x.logic)} &nbsp;→&nbsp; <b>Output:</b> ${esc(x.output_devices)}</p><p><b>Channels:</b> ${esc(x.channels)} · <b>EDM:</b> ${esc(x.edm)} · <b>Cross-fault:</b> ${esc(x.cross_fault_detection)} · <b>Reset:</b> ${esc(x.reset)} · <b>Stop cat.:</b> ${esc(x.stop_category)}</p><p><b>Suggested category:</b> ${esc(x.suggested_category)}${x.likely_pl ? " (" + esc(x.likely_pl) + ")" : ""}${x.rationale ? " · " + esc(x.rationale) : ""}</p></div>`).join("") || "<p>None.</p>"}
 <h2>How it works</h2>${r.circuits.map(c => `<h3>${esc(c.name)}</h3><p>${esc(c.description)}</p><ol>${arr(c.sequence).map(x => `<li>${esc(x)}</li>`).join("")}</ol>`).join("") || "<p>None.</p>"}
 ${marked.length ? `<h2 class="newpage">Marked drawings</h2>${marked.map(m => `<h3>${esc(m.name)}</h3><img class="mk" src="${m.url}" alt="Marked drawing">${tbl([["label", "Label"], ["tag", "Tag"], ["device", "Device"], ["state", "State"], ["category", "Type"], ["confidence", "Confidence"]], m.marks)}`).join("")}` : ""}
+${legendSection()}
 <h2>Components</h2>${tbl([["tag", "Tag"], ["type", "Device"], ["symbol", "Symbol"], ["function", "Function"], ["ratings", "Ratings"], ["location", "Location"], ["safety_related", "Safety"], ["confidence", "Confidence"]], r.components)}
 <h2>Connections</h2>${tbl([["from", "From"], ["to", "To"], ["wire", "Wire"], ["via", "Via"], ["signal", "Signal"], ["confidence", "Confidence"]], r.connections)}
 ${arr(r.sld?.feeders).length ? `<h2>Single-line diagram</h2><p>${esc([r.sld.supply, r.sld.incomer, r.sld.busbar, r.sld.earthing].filter(Boolean).join(" · "))}</p>${tbl([["tag", "Tag"], ["device", "Device"], ["rating", "Rating"], ["cable", "Cable"], ["load", "Load"]], r.sld.feeders)}` : ""}
