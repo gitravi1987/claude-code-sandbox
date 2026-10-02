@@ -10,7 +10,19 @@ A single-page web app that reads electrical drawings: IEC and NEMA/JIC control c
   - The model list is loaded live from OpenRouter (vision models only). Compare two or three models on the same sheet: each saved report records which model read it.
   - Give the key a monthly spending limit in OpenRouter.
 
-## Legend tab (docs version)
+## Navigation (docs version)
+
+- A sticky top bar has **Projects** (with a count), **Home**, **New / Clear** and **Setup**.
+- **Projects** opens a sidebar of saved projects: search, Open, Rename and Delete (two taps to confirm), the open project highlighted, plus New project and Home. Every reading is saved automatically in the browser (IndexedDB), per device.
+- **Home** returns to the start screen without deleting anything. **New / Clear** (two taps) empties the loaded drawings, the context box and the current report. **Clear all** in the Drawings panel removes only the loaded drawings.
+
+## Symbol library and Legend (docs version)
+
+- `SYMLIB` holds 50 reference symbols, each drawn for IEC and NEMA / JIC, with typical designations (letter codes), a one-line description and the standard it comes from. They are browsable and searchable in the Learn tab. The drawings and designations were written by the app author and are indicative: check them against the standards you use.
+- In the Legend, each marked symbol type is matched to a library symbol (`LIBMATCH`, in priority order, using the normalised name plus NO/NC). Matched rows show the clean IEC and NEMA symbols. Types with no library symbol fall back to the clearest crop from the drawing, labelled "As drawn".
+- Each row also shows the designations, the legend text, the count, and for each tag its sheet, location (from the component list) and cross-reference (from the report's cross-reference list).
+
+## Legend tab: crops for unmatched types (docs version)
 
 Built right after a sheet is marked, from the marks and the original image:
 
