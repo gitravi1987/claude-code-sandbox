@@ -212,6 +212,14 @@ ul.plain{margin:0;padding-left:18px;font-size:13.5px}
 .hitem .d{font:500 11px var(--f-mono);color:var(--muted)}
 .hitem .acts{display:flex;gap:4px}
 .exports{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#printRoot{display:none}
+#sumOut{width:100%;min-height:140px;margin-top:8px;font:12.5px/1.4 var(--f-mono)}
+@media print{
+  @page{size:A4;margin:14mm 12mm}
+  html,body{background:#fff!important;background-image:none!important;padding:0!important;margin:0!important;color:#10161c!important}
+  body>*:not(#printRoot){display:none!important}
+  #printRoot{display:block!important}
+}
 .empty{color:var(--muted);font-size:13.5px}
 
 /* Learn mode */
@@ -1153,7 +1161,7 @@ $("#report").addEventListener("click", e => {
 });
 function exportsHtml(){
   if (!downloads) return "";
-  return `<div class="exports"><button class="btn small" data-export="xlsx" type="button">Download Excel</button><button class="btn small" data-export="html" type="button">Download report</button><button class="btn small" data-export="json" type="button">Download JSON</button><span id="exMsg" class="empty"></span></div>`;
+  return `<div class="exports"><button class="btn primary small" data-export="pdf" type="button">Save as PDF</button><button class="btn small" data-export="share" type="button">Share summary</button><button class="btn small" data-export="xlsx" type="button">Download Excel</button><button class="btn small" data-export="html" type="button">Download HTML</button><button class="btn small" data-export="json" type="button">Download JSON</button><span id="exMsg" class="empty"></span></div>`;
 }
 function renderTab(){
   const r = state.report, p = $("#tabpanel");
@@ -1744,12 +1752,14 @@ $("#report").addEventListener("input", ev => { if (ev.target.id === "markModel")
 /* ---------- Exports ---------- */
 function fileBase(){ return (state.report.sheet?.title || "schematic-report").replace(/[^\w\- ]+/g, "").trim().slice(0, 60) || "schematic-report"; }
 async function doExport(kind, btn){
+  if (kind === "pdf") return printReport(btn);
+  if (kind === "share") return shareSummary(btn);
   if (!downloads) return;
   const msg = $("#exMsg"); msg.textContent = "Preparing…"; btn.disabled = true;
   try {
     let data, name;
     if (kind === "json") { data = JSON.stringify({...state.report, marked: arr(state.report.marked).map(({img, ...rest}) => rest)}, null, 2); name = fileBase() + ".json"; }
-    if (kind === "html") { const marked = []; for (const e of arr(state.report.marked)) marked.push({name: e.name, url: await renderMarkedDataUrl(e), marks: e.marks}); data = reportDoc(marked); name = fileBase() + ".html"; }
+    if (kind === "html") { data = reportDoc(await markedForReport()); name = fileBase() + ".html"; }
     if (kind === "xlsx") {
       if (!window.XLSX) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
       const r = state.report, wb = XLSX.utils.book_new();
@@ -1773,24 +1783,121 @@ async function doExport(kind, btn){
     msg.textContent = e?.code === "declined" ? "" : "Couldn't save the file.";
   } finally { btn.disabled = false; }
 }
-function reportDoc(marked = []){
-  const r = state.report, s = r.sheet || {};
-  const tbl = (cols, rows) => rows.length ? `<table><tr>${cols.map(c => `<th>${esc(c[1])}</th>`).join("")}</tr>${rows.map(x => `<tr>${cols.map(c => `<td>${esc(str(x[c[0]]))}</td>`).join("")}</tr>`).join("")}</table>` : "<p>None.</p>";
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(s.title || "Schematic report")}</title>
-<style>body{font:14px/1.5 Arial,sans-serif;color:#16222c;max-width:1000px;margin:24px auto;padding:0 16px}h1{margin:0 0 4px}h2{border-bottom:3px solid #f2b705;padding-bottom:4px;margin-top:28px}table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{border:1px solid #cfd6d0;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eef1ec}.d{color:#56636e;font-size:12px}</style></head><body>
-<h1>${esc(s.title || "Schematic report")}</h1>
-<p class="d">${esc([s.drawing_no && "Drawing " + s.drawing_no, s.sheet_no && "Sheet " + s.sheet_no, s.revision && "Rev " + s.revision, s.standard_detected, s.drawing_type].filter(Boolean).join(" · "))}<br>Generated ${new Date(r.meta?.createdAt || Date.now()).toLocaleString()} with Ravi's Machine Safety – Electrical &amp; Control Circuit App. Advisory only: verify against the actual installation.</p>
-<h2>Summary</h2>${esc(r.summary).split(/\n+/).map(p => `<p>${p}</p>`).join("")}
+const REPORT_CSS = `
+.rpt{font:10pt/1.45 Arial,Helvetica,sans-serif;color:#10161c;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.rpt *{box-sizing:border-box}
+.rpt .brand{display:flex;justify-content:space-between;gap:12px;font:700 8.5pt Arial,sans-serif;letter-spacing:.05em;text-transform:uppercase;border-bottom:3px solid #f5b301;padding-bottom:4px;margin-bottom:10px}
+.rpt h1{font:700 18pt/1.2 Arial,sans-serif;margin:0 0 4px;color:#10161c}
+.rpt h2{font:700 12.5pt/1.2 Arial,sans-serif;margin:18px 0 6px;padding-bottom:3px;border-bottom:2px solid #f5b301;break-after:avoid;color:#10161c}
+.rpt h3{font:700 10.5pt/1.2 Arial,sans-serif;margin:12px 0 4px;break-after:avoid;color:#10161c}
+.rpt p{margin:0 0 6px}
+.rpt .d{color:#56606a;font-size:9pt}
+.rpt .disc{font-size:8.5pt;color:#56606a;border:1px dashed #b9c0c7;padding:5px 8px;margin:8px 0}
+.rpt .rcounts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.rpt .rchip{border:1px solid #cfd6d0;border-radius:10px;padding:1px 8px;font-size:8.5pt;font-weight:700}
+.rpt .rchip.critical{color:#c42b2b;border-color:#c42b2b}.rpt .rchip.major{color:#c05f0a;border-color:#c05f0a}.rpt .rchip.minor{color:#8f7200;border-color:#8f7200}
+.rpt table{border-collapse:collapse;width:100%;font-size:8.5pt;margin:4px 0 8px;table-layout:auto}
+.rpt th,.rpt td{border:1px solid #cfd6d0;padding:3px 5px;text-align:left;vertical-align:top;overflow-wrap:break-word;color:#10161c;position:static}
+.rpt th{background:#eef1ec;font:700 8.5pt Arial,sans-serif;text-transform:none;letter-spacing:0;overflow-wrap:normal;hyphens:none}
+.rpt .sfn{border:1px solid #cfd6d0;border-left:4px solid #f5b301;padding:5px 8px;margin:0 0 6px;break-inside:avoid}
+.rpt .sfn h3{margin:0 0 3px}
+.rpt .sfn p{margin:0 0 2px;font-size:9pt}
+.rpt thead{display:table-header-group}
+.rpt tr{break-inside:avoid}
+.rpt .sev{font-weight:700;text-transform:uppercase;font-size:8pt;white-space:nowrap}
+.rpt .sev.critical{color:#c42b2b}.rpt .sev.major{color:#c05f0a}.rpt .sev.minor{color:#8f7200}.rpt .sev.info{color:#56606a}
+.rpt img.mk{display:block;max-width:100%;max-height:225mm;margin:4px auto 8px;border:1px solid #cfd6d0;break-inside:avoid}
+.rpt .newpage{break-before:page}
+.rpt ul,.rpt ol{margin:2px 0 8px;padding-left:18px}
+.rpt li{margin:0 0 2px}
+`;
+const REPORT_PAGE_CSS = `@media screen{body{max-width:1000px;margin:24px auto;padding:0 16px;background:#fff}.rpt{font-size:11pt}.rpt table{font-size:9.5pt}}`;
+document.head.appendChild(Object.assign(document.createElement("style"), {id: "rptCss", textContent: REPORT_CSS}));
+
+function reportBody(marked = []){
+  const r = state.report, s = r.sheet || {}, f = counts(r);
+  const title = s.title || r.meta?.sheets?.[0] || "Schematic report";
+  const cell = fn => x => fn(x);
+  const tbl = (cols, rows) => rows.length ? `<table><thead><tr>${cols.map(c => `<th>${esc(c[1])}</th>`).join("")}</tr></thead><tbody>${rows.map(x => `<tr>${cols.map(c => `<td>${c[2] ? c[2](x) : esc(str(x[c[0]]))}</td>`).join("")}</tr>`).join("")}</tbody></table>` : "<p>None.</p>";
+  const sorted = [...r.findings].sort((a, b) => SEV.indexOf(sevKey(a.severity)) - SEV.indexOf(sevKey(b.severity)));
+  const meta = [s.drawing_no && "Drawing " + s.drawing_no, s.sheet_no && "Sheet " + s.sheet_no, s.revision && "Rev " + s.revision, s.standard_detected, s.drawing_type].filter(Boolean).join(" · ");
+  const chip = (n, label, cls = "") => n ? `<span class="rchip ${cls}">${n} ${label}</span>` : "";
+  return `<div class="rpt">
+<div class="brand"><span>Ravi's Machine Safety</span><span>Electrical &amp; Control Circuit Report</span></div>
+<h1>${esc(title)}</h1>
+<p class="d">${esc(meta)}${meta ? "<br>" : ""}Generated ${esc(new Date(r.meta?.createdAt || Date.now()).toLocaleString())}${r.meta?.model ? " · read by " + esc(r.meta.model) : ""}</p>
+<div class="rcounts">${chip(r.components.length, "components")}${chip(r.connections.length, "connections")}${chip(r.safety_functions.length, "safety functions")}${chip(f.critical, "critical", "critical")}${chip(f.major, "major", "major")}${chip(f.minor, "minor", "minor")}${chip(f.info, "info")}</div>
+<p class="disc">Advisory review prepared by an AI model from a drawing image. Categories and performance levels are suggestions. Verify against the actual installation, device data and the applicable standards before relying on it.</p>
+<h2>Summary</h2>${esc(r.summary).split(/\n+/).filter(Boolean).map(p => `<p>${p}</p>`).join("") || "<p>None.</p>"}
+<h2>Observations and recommendations</h2>${tbl([["severity", "Severity", x => `<span class="sev ${sevKey(x.severity)}">${esc(sevKey(x.severity))}</span>`], ["title", "Observation"], ["detail", "Detail"], ["reference", "Where"], ["recommendation", "Recommendation"], ["standard", "Standard"], ["confidence", "Confidence"]], sorted)}
+<h2>Safety functions</h2>${r.safety_functions.map(x => `<div class="sfn"><h3>${esc(x.name)}</h3><p><b>Input:</b> ${esc(x.input_devices)} &nbsp;→&nbsp; <b>Logic:</b> ${esc(x.logic)} &nbsp;→&nbsp; <b>Output:</b> ${esc(x.output_devices)}</p><p><b>Channels:</b> ${esc(x.channels)} · <b>EDM:</b> ${esc(x.edm)} · <b>Cross-fault:</b> ${esc(x.cross_fault_detection)} · <b>Reset:</b> ${esc(x.reset)} · <b>Stop cat.:</b> ${esc(x.stop_category)}</p><p><b>Suggested category:</b> ${esc(x.suggested_category)}${x.likely_pl ? " (" + esc(x.likely_pl) + ")" : ""}${x.rationale ? " · " + esc(x.rationale) : ""}</p></div>`).join("") || "<p>None.</p>"}
 <h2>How it works</h2>${r.circuits.map(c => `<h3>${esc(c.name)}</h3><p>${esc(c.description)}</p><ol>${arr(c.sequence).map(x => `<li>${esc(x)}</li>`).join("")}</ol>`).join("") || "<p>None.</p>"}
-<h2>Components</h2>${tbl([["tag","Tag"],["type","Device"],["symbol","Symbol"],["function","Function"],["ratings","Ratings"],["location","Location"],["safety_related","Safety"],["confidence","Confidence"]], r.components)}
-<h2>Connections</h2>${tbl([["from","From"],["to","To"],["wire","Wire"],["via","Via"],["signal","Signal"],["confidence","Confidence"]], r.connections)}
-<h2>Safety functions</h2>${tbl([["name","Function"],["input_devices","Input"],["logic","Logic"],["output_devices","Output"],["channels","Channels"],["edm","EDM"],["cross_fault_detection","Cross-fault"],["reset","Reset"],["stop_category","Stop cat."],["suggested_category","Suggested cat."],["likely_pl","Likely PL"],["rationale","Rationale"]], r.safety_functions)}
-<h2>Findings</h2>${tbl([["severity","Severity"],["title","Finding"],["detail","Detail"],["reference","Reference"],["recommendation","Recommendation"],["standard","Standard"],["confidence","Confidence"]], [...r.findings].sort((a, b) => SEV.indexOf(sevKey(a.severity)) - SEV.indexOf(sevKey(b.severity))))}
-${arr(r.sld?.feeders).length ? `<h2>Single-line diagram</h2><p>${esc([r.sld.supply, r.sld.incomer, r.sld.busbar, r.sld.earthing].filter(Boolean).join(" · "))}</p>${tbl([["tag","Tag"],["device","Device"],["rating","Rating"],["cable","Cable"],["load","Load"]], r.sld.feeders)}` : ""}
-${marked.length ? `<h2>Marked drawings</h2>${marked.map(m => `<h3>${esc(m.name)}</h3><img src="${m.url}" alt="Marked drawing" style="max-width:100%;border:1px solid #cfd6d0">${tbl([["label","Label"],["tag","Tag"],["device","Device"],["state","State"],["category","Type"],["confidence","Confidence"]], m.marks)}`).join("")}` : ""}
-<h2>To verify</h2><ul>${r.verify.map(v => `<li>${esc(v)}</li>`).join("")}</ul>
+${marked.length ? `<h2 class="newpage">Marked drawings</h2>${marked.map(m => `<h3>${esc(m.name)}</h3><img class="mk" src="${m.url}" alt="Marked drawing">${tbl([["label", "Label"], ["tag", "Tag"], ["device", "Device"], ["state", "State"], ["category", "Type"], ["confidence", "Confidence"]], m.marks)}`).join("")}` : ""}
+<h2>Components</h2>${tbl([["tag", "Tag"], ["type", "Device"], ["symbol", "Symbol"], ["function", "Function"], ["ratings", "Ratings"], ["location", "Location"], ["safety_related", "Safety"], ["confidence", "Confidence"]], r.components)}
+<h2>Connections</h2>${tbl([["from", "From"], ["to", "To"], ["wire", "Wire"], ["via", "Via"], ["signal", "Signal"], ["confidence", "Confidence"]], r.connections)}
+${arr(r.sld?.feeders).length ? `<h2>Single-line diagram</h2><p>${esc([r.sld.supply, r.sld.incomer, r.sld.busbar, r.sld.earthing].filter(Boolean).join(" · "))}</p>${tbl([["tag", "Tag"], ["device", "Device"], ["rating", "Rating"], ["cable", "Cable"], ["load", "Load"]], r.sld.feeders)}` : ""}
+<h2>To verify</h2>${r.verify.length ? `<ul>${r.verify.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : "<p>None.</p>"}
 ${r.unreadable.length ? `<h2>Could not read reliably</h2><ul>${r.unreadable.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : ""}
-</body></html>`;
+</div>`;
+}
+function reportDoc(marked = []){
+  const s = state.report.sheet || {};
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(s.title || "Schematic report")}</title><style>${REPORT_CSS}${REPORT_PAGE_CSS}@page{size:A4;margin:14mm 12mm}</style></head><body>${reportBody(marked)}</body></html>`;
+}
+async function markedForReport(){
+  const out = [];
+  for (const e of arr(state.report.marked)) out.push({name: e.name, url: await renderMarkedDataUrl(e), marks: e.marks});
+  return out;
+}
+async function printReport(btn){
+  const msg = $("#exMsg"); msg.textContent = "Preparing…"; btn.disabled = true;
+  try {
+    let root = $("#printRoot");
+    if (!root) { root = document.createElement("div"); root.id = "printRoot"; document.body.appendChild(root); }
+    root.innerHTML = reportBody(await markedForReport());
+    await Promise.all([...root.querySelectorAll("img")].map(im => im.decode ? im.decode().catch(() => {}) : null));
+    const prevTitle = document.title; document.title = fileBase();            // Chrome suggests this as the PDF file name
+    const done = () => { document.title = prevTitle; root.innerHTML = ""; window.removeEventListener("afterprint", done); };
+    window.addEventListener("afterprint", done);
+    msg.textContent = "In the print window, choose “Save as PDF” as the destination.";
+    window.print();
+  } catch { msg.textContent = "Couldn't open the print view. Try Download HTML, then print that file."; }
+  finally { btn.disabled = false; }
+}
+function summaryText(){
+  const r = state.report, s = r.sheet || {};
+  const title = s.title || r.meta?.sheets?.[0] || "Drawing review";
+  const meta = [s.drawing_no && "Drawing " + s.drawing_no, s.sheet_no && "Sheet " + s.sheet_no, s.standard_detected, s.drawing_type].filter(Boolean).join(" · ");
+  const fs = [...r.findings].sort((a, b) => SEV.indexOf(sevKey(a.severity)) - SEV.indexOf(sevKey(b.severity)));
+  const L = [`*${title}*`];
+  if (meta) L.push(meta);
+  const sum = str(r.summary).replace(/\s+/g, " ").trim();
+  if (sum) L.push("", sum.length > 500 ? sum.slice(0, 497) + "…" : sum);
+  if (fs.length) {
+    L.push("", "*Observations*");
+    fs.slice(0, 12).forEach((x, i) => L.push(`${i + 1}. [${sevKey(x.severity).toUpperCase()}] ${str(x.title)}${x.reference ? " (" + str(x.reference) + ")" : ""}${x.recommendation ? " → " + str(x.recommendation) : ""}`));
+    if (fs.length > 12) L.push(`…and ${fs.length - 12} more in the full report.`);
+  }
+  const sf = arr(r.safety_functions).slice(0, 6);
+  if (sf.length) { L.push("", "*Safety functions*"); sf.forEach(x => L.push(`- ${str(x.name)}: ${str(x.channels)} channel, EDM ${str(x.edm)}, suggested Cat ${str(x.suggested_category)}${x.likely_pl ? " (" + str(x.likely_pl) + ")" : ""}`)); }
+  const v = arr(r.verify).slice(0, 5);
+  if (v.length) { L.push("", "*To verify*"); v.forEach(x => L.push("- " + str(x))); }
+  L.push("", "Advisory AI-assisted review. Verify against the installation. Ravi's Machine Safety app.");
+  return L.join("\n");
+}
+async function shareSummary(){
+  const msg = $("#exMsg"), text = summaryText(), r = state.report;
+  const title = r.sheet?.title || r.meta?.sheets?.[0] || "Drawing review";
+  if (navigator.share) {
+    try { await navigator.share({title, text}); msg.textContent = ""; return; }
+    catch (e) { if (e?.name === "AbortError") { msg.textContent = ""; return; } }
+  }
+  try { await navigator.clipboard.writeText(text); msg.textContent = "Summary copied. Paste it into WhatsApp or email."; }
+  catch {
+    let box = $("#sumOut");
+    if (!box) { box = document.createElement("textarea"); box.id = "sumOut"; box.readOnly = true; box.setAttribute("aria-label", "Summary to copy"); $(".exports").after(box); }
+    box.value = text; box.focus(); box.select(); msg.textContent = "Copy the selected text (Ctrl+C, or long-press → Copy).";
+  }
 }
 
 /* ---------- Saved reports (shared db, kept across devices) ---------- */

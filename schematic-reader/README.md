@@ -10,6 +10,12 @@ A single-page web app that reads electrical drawings: IEC and NEMA/JIC control c
   - The model list is loaded live from OpenRouter (vision models only). Compare two or three models on the same sheet: each saved report records which model read it.
   - Give the key a monthly spending limit in OpenRouter.
 
+## Sharing a report (docs version)
+
+- **Save as PDF** builds an A4 report (summary, observations and recommendations, safety functions, how it works, marked drawings, components, connections, to-verify list) and opens the browser print window. Choose "Save as PDF" as the destination. The report is built into a hidden `#printRoot` element that is only visible when printing, so no PDF library is needed and the text stays selectable. The page title is set to the report name, which Chrome suggests as the file name.
+- **Share summary** opens the phone's share sheet (WhatsApp, email, etc.) with a short text: title, summary, observations by severity with recommendations, safety functions and the to-verify list. If the browser has no share sheet it copies the text instead.
+- **Download Excel / HTML / JSON** are still available. The HTML file is a standalone version of the same report and prints cleanly too.
+
 ## Marked drawing (docs version)
 
 After reading a sheet, the app sends the full image to the vision model once more and asks it to box every symbol with a short label such as `K1 Contactor NC`, `M1 Motor 3~` or `S1 E-stop NC`. The **Marked drawing** tab draws the boxes on your image.
